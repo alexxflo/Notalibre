@@ -1,33 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
-    }
-
-    match /stats/{statId} {
-      allow read: if true;
-      allow write: if isSignedIn();
-    }
-
-    match /campaigns/{campaignId} {
-      // Allow any signed-in user to read the full list of campaigns.
-      allow read: if request.auth != null;
-      
-      // Allow creating a campaign only if the userId in the document matches the creator's ID.
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-
-      // Any signed in user can delete (claim) a campaign, as long as it's not their own.
-      allow delete: if request.auth != null && resource.data.userId != request.auth.uid;
+    // Esta regla permite leer y escribir a CUALQUIER usuario que haya iniciado sesión
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
