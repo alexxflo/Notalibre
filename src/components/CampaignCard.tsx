@@ -5,8 +5,12 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
-import { Campaign, useCampaigns } from '@/context/CampaignContext';
 import { CheckCircle, Clock } from 'lucide-react';
+import { Campaign } from '@/types';
+import { useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 type CampaignCardProps = {
   campaign: Campaign;
@@ -18,7 +22,7 @@ const COUNTDOWN_SECONDS = 20;
 
 export default function CampaignCard({ campaign, coinBalance, updateCoinBalance }: CampaignCardProps) {
   const { toast } = useToast();
-  const { removeCampaign } = useCampaigns();
+  const firestore = useFirestore();
   const [status, setStatus] = useState<'idle' | 'pending' | 'claimable'>('idle');
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
 
@@ -41,18 +45,20 @@ export default function CampaignCard({ campaign, coinBalance, updateCoinBalance 
   };
 
   const handleClaim = () => {
-    updateCoinBalance(coinBalance + campaign.recompensa);
-    removeCampaign(campaign.id);
+    updateCoinBalance(coinBalance + campaign.reward);
+    const campaignDocRef = doc(firestore, 'campaigns', campaign.id);
+    deleteDocumentNonBlocking(campaignDocRef);
+
     toast({
       title: "¡Recompensa Obtenida!",
-      description: `Has ganado ${campaign.recompensa} monedas.`,
+      description: `Has ganado ${campaign.reward} monedas.`,
     });
   };
 
   const getButton = () => {
     switch (status) {
       case 'idle':
-        return <Button onClick={handleFollow} className="bg-cyan-500 text-black hover:bg-cyan-400 font-bold uppercase w-full md:w-auto">Seguir (+{campaign.recompensa} Monedas)</Button>;
+        return <Button onClick={handleFollow} className="bg-cyan-500 text-black hover:bg-cyan-400 font-bold uppercase w-full md:w-auto">Seguir (+{campaign.reward} Monedas)</Button>;
       case 'pending':
         return (
           <div className="w-full flex flex-col items-center gap-2">
@@ -80,15 +86,15 @@ export default function CampaignCard({ campaign, coinBalance, updateCoinBalance 
       <div className="flex items-center gap-4">
         <Image
           src={campaign.avatarUrl}
-          alt={campaign.usuario}
+          alt={campaign.username}
           width={64}
           height={64}
           className="rounded-full border-2 border-cyan-400 shadow-lg"
           unoptimized // Required for unavatar
         />
         <div>
-            <p className="font-bold text-lg text-white">{campaign.usuario}</p>
-            <p className="text-sm text-cyan-400 font-semibold">{campaign.red_social}</p>
+            <p className="font-bold text-lg text-white">{campaign.username}</p>
+            <p className="text-sm text-cyan-400 font-semibold">{campaign.socialNetwork}</p>
         </div>
       </div>
       <div className="w-full md:w-auto md:min-w-[240px]">

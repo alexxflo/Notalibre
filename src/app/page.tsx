@@ -9,10 +9,9 @@ import CampaignForm from '@/components/CampaignForm';
 import EarnSection from '@/components/EarnSection';
 import Pricing from '@/components/Pricing';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CampaignProvider } from '@/context/CampaignContext';
 import Footer from '@/components/Footer';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase';
 import SignIn from '@/components/auth/SignIn';
 
@@ -121,15 +120,13 @@ function MainApp() {
   };
 
   return (
-    <CampaignProvider>
-      <div className="min-h-screen flex flex-col">
-        <Header coinBalance={coinBalance} setView={setView} />
-        <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
-          {renderView()}
-        </main>
-        <Footer />
-      </div>
-    </CampaignProvider>
+    <div className="min-h-screen flex flex-col">
+      <Header coinBalance={coinBalance} setView={setView} />
+      <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
+        {renderView()}
+      </main>
+      <Footer />
+    </div>
   );
 }
 

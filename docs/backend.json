@@ -49,6 +49,52 @@
       "required": [
         "count"
       ]
+    },
+    "Campaign": {
+      "title": "Campaign",
+      "description": "Represents a user-created campaign to gain followers.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who created the campaign."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username for the social media profile."
+        },
+        "socialNetwork": {
+          "type": "string",
+          "description": "The social media platform."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL of the social media profile."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the avatar for the profile."
+        },
+        "reward": {
+          "type": "number",
+          "description": "The number of coins rewarded for one follow."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the campaign was created."
+        }
+      },
+      "required": [
+        "userId",
+        "username",
+        "socialNetwork",
+        "url",
+        "avatarUrl",
+        "reward",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -68,6 +114,12 @@
         "$ref": "#/entities/Stats"
       },
       "description": "Stores the total count of registered users."
+    },
+    "/campaigns/{campaignId}": {
+      "schema": {
+        "$ref": "#/entities/Campaign"
+      },
+      "description": "Stores individual, single-claim campaigns created by users. Each document represents one potential follow."
     }
   }
 }

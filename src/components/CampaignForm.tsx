@@ -4,13 +4,16 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from "@/hooks/use-toast";
-import { useCampaigns } from '@/context/CampaignContext';
 import { Rocket, AlertTriangle, CheckCircle, Image as ImageIcon } from 'lucide-react';
 import { View } from '@/app/page';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 const COST_PER_FOLLOWER = 5;
+const REWARD_PER_FOLLOW = 3;
 
 type CampaignFormProps = {
   coinBalance: number;
@@ -20,7 +23,9 @@ type CampaignFormProps = {
 
 export default function CampaignForm({ coinBalance, updateCoinBalance, setView }: CampaignFormProps) {
   const { toast } = useToast();
-  const { addCampaign } = useCampaigns();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
   const [url, setUrl] = useState('');
   const [socialNetwork, setSocialNetwork] = useState<'TikTok' | 'Facebook' | 'Instagram' | 'generic'>('generic');
   const [username, setUsername] = useState('');
@@ -83,6 +88,14 @@ export default function CampaignForm({ coinBalance, updateCoinBalance, setView }
   }, [url]);
 
   const handlePublish = () => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "No estás autenticado",
+        description: "Necesitas iniciar sesión para crear una campaña.",
+      });
+      return;
+    }
     if (coinBalance < totalCost) {
       toast({
         variant: "destructive",
@@ -119,13 +132,21 @@ export default function CampaignForm({ coinBalance, updateCoinBalance, setView }
     }
 
     updateCoinBalance(coinBalance - totalCost);
-    
-    addCampaign({
-        usuario: username,
-        red_social: socialNetwork,
+
+    const campaignsCollection = collection(firestore, 'campaigns');
+    const newCampaignData = {
+        userId: user.uid,
+        username: username,
+        socialNetwork: socialNetwork,
         url: url,
-        avatarUrl: avatarUrl || `https://unavatar.io/${username}`,
-    });
+        avatarUrl: avatarUrl || `https://unavatar.io/generic/${username}`,
+        reward: REWARD_PER_FOLLOW,
+        createdAt: serverTimestamp(),
+    };
+    
+    for (let i = 0; i < followers; i++) {
+        addDocumentNonBlocking(campaignsCollection, newCampaignData);
+    }
 
     toast({
       title: "¡Campaña Publicada!",
