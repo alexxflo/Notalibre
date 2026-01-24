@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Rocket, Users } from 'lucide-react';
+import { ArrowLeft, Rocket, Users, Loader2 } from 'lucide-react';
 import GatekeeperModal from '@/components/GatekeeperModal';
 import Header from '@/components/Header';
 import CampaignForm from '@/components/CampaignForm';
@@ -11,40 +11,52 @@ import Pricing from '@/components/Pricing';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CampaignProvider } from '@/context/CampaignContext';
 import Footer from '@/components/Footer';
-
-const GATEKEEPER_KEY = 'vortex_gatekeeper_passed';
-const COIN_BALANCE_KEY = 'vortex_coin_balance';
-const WELCOME_BONUS = 50;
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase';
+import SignIn from '@/components/auth/SignIn';
 
 export type View = 'home' | 'earn' | 'create' | 'store';
 
-export default function Home() {
-  const [isClient, setIsClient] = useState(false);
-  const [isGatekeeperPassed, setIsGatekeeperPassed] = useState(false);
-  const [coinBalance, setCoinBalance] = useState(0);
-  const [view, setView] = useState<View>('home');
+const WELCOME_BONUS = 50;
 
-  useEffect(() => {
-    const passed = localStorage.getItem(GATEKEEPER_KEY) === 'true';
-    if (passed) {
-      setIsGatekeeperPassed(true);
-      const balance = localStorage.getItem(COIN_BALANCE_KEY);
-      setCoinBalance(balance ? parseInt(balance, 10) : WELCOME_BONUS);
-    }
-    setIsClient(true);
-  }, []);
-  
+function MainApp() {
+  const [view, setView] = useState<View>('home');
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+
   const handleGatekeeperConfirm = () => {
-    localStorage.setItem(GATEKEEPER_KEY, 'true');
-    localStorage.setItem(COIN_BALANCE_KEY, String(WELCOME_BONUS));
-    setIsGatekeeperPassed(true);
-    setCoinBalance(WELCOME_BONUS);
+    if (!userProfileRef) return;
+    updateDocumentNonBlocking(userProfileRef, { 
+      gatekeeperPassed: true,
+      coinBalance: userProfile?.coinBalance === 0 ? WELCOME_BONUS : userProfile?.coinBalance
+    });
   };
   
   const updateCoinBalance = (newBalance: number) => {
-    if (newBalance < 0) return;
-    setCoinBalance(newBalance);
-    localStorage.setItem(COIN_BALANCE_KEY, String(newBalance));
+    if (newBalance < 0 || !userProfileRef) return;
+    updateDocumentNonBlocking(userProfileRef, { coinBalance: newBalance });
+  }
+
+  const coinBalance = userProfile?.coinBalance ?? 0;
+
+  if (isProfileLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <Loader2 className="h-16 w-16 animate-spin text-cyan-400" />
+      </div>
+    );
+  }
+  
+  if (!userProfile?.gatekeeperPassed) {
+    return <GatekeeperModal onConfirm={handleGatekeeperConfirm} />;
   }
 
   const renderView = () => {
@@ -108,35 +120,39 @@ export default function Home() {
     }
   };
 
-  if (!isClient) {
+  return (
+    <CampaignProvider>
+      <div className="min-h-screen flex flex-col">
+        <Header coinBalance={coinBalance} setView={setView} />
+        <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
+          {renderView()}
+        </main>
+        <Footer />
+      </div>
+    </CampaignProvider>
+  );
+}
+
+export default function Home() {
+  const { user, isUserLoading } = useUser();
+
+  if (isUserLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+       <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-slate-900">
         <div className="w-full max-w-4xl space-y-8">
-          <div className="flex justify-between items-center">
-            <Skeleton className="h-10 w-48 bg-slate-700" />
-            <Skeleton className="h-10 w-24 rounded-full bg-slate-700" />
+          <div className="flex justify-between items-center p-4">
+            <Skeleton className="h-12 w-48 bg-slate-700" />
+            <Skeleton className="h-10 w-48 rounded-full bg-slate-700" />
           </div>
         </div>
-        <Skeleton className="h-96 w-full max-w-4xl mt-8 rounded-xl bg-slate-700" />
+         <Skeleton className="h-96 w-full max-w-6xl mt-8 rounded-xl bg-slate-700" />
       </div>
-    );
+    )
   }
 
-  return (
-    <>
-      {!isGatekeeperPassed ? (
-        <GatekeeperModal onConfirm={handleGatekeeperConfirm} />
-      ) : (
-        <CampaignProvider>
-          <div className="min-h-screen flex flex-col">
-            <Header coinBalance={coinBalance} setView={setView} />
-            <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
-              {renderView()}
-            </main>
-            <Footer />
-          </div>
-        </CampaignProvider>
-      )}
-    </>
-  );
+  if (!user) {
+    return <SignIn />;
+  }
+
+  return <MainApp />;
 }

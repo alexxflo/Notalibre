@@ -1,0 +1,71 @@
+'use client';
+
+import {
+  useAuth,
+  useFirestore,
+  setDocumentNonBlocking,
+} from '@/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
+import { GoogleIcon } from '../icons';
+
+const WELCOME_BONUS = 50;
+
+export default function SignIn() {
+  const auth = useAuth();
+  const firestore = useFirestore();
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Check if user profile already exists
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const docSnap = await getDoc(userDocRef);
+
+      if (!docSnap.exists()) {
+        // Create user profile document if it doesn't exist
+        const newUserProfile = {
+          username: user.displayName || 'Usuario Anónimo',
+          email: user.email || '',
+          avatarUrl: user.photoURL || `https://unavatar.io/${user.email}`,
+          coinBalance: WELCOME_BONUS,
+          gatekeeperPassed: false,
+        };
+        // We use setDoc here because it's a one-time critical creation.
+        // For subsequent updates, we should use non-blocking updates.
+        await setDoc(userDocRef, newUserProfile);
+      }
+    } catch (error) {
+      console.error('Error during Google Sign-In:', error);
+      // Optionally, show a toast to the user
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white p-4">
+        <div className="text-center mb-8">
+            <h1 className="font-orbitron italic tracking-tighter flex items-end justify-center mb-4">
+                <span className="text-6xl md:text-8xl text-cyan-400 font-black transform -skew-x-12 mr-1" style={{textShadow: '0 0 15px cyan'}}>V</span>
+                <span className="text-4xl md:text-6xl text-white self-center">O</span>
+                <span className="text-4xl md:text-6xl text-white self-center">R</span>
+                <span className="text-7xl md:text-9xl text-fuchsia-500 font-black transform skew-x-12 mx-1" style={{textShadow: '0 0 20px fuchsia'}}>T</span>
+                <span className="text-4xl md:text-6xl text-white self-center">E</span>
+                <span className="text-6xl md:text-8xl text-cyan-400 font-black transform -skew-x-12 ml-1" style={{textShadow: '0 0 15px cyan'}}>X</span>
+            </h1>
+            <p className="text-xl text-slate-400">Acelera tu Crecimiento Social.</p>
+        </div>
+      <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+        <h2 className="text-2xl font-headline font-bold text-white mb-2">Acceso a la Plataforma</h2>
+        <p className="text-slate-400 mb-6">Inicia sesión para dominar el algoritmo.</p>
+        <Button onClick={handleGoogleSignIn} size="lg" className="w-full font-bold bg-white text-black hover:bg-gray-200">
+          <GoogleIcon className="mr-2 h-5 w-5" />
+          Iniciar Sesión con Google
+        </Button>
+      </div>
+    </div>
+  );
+}

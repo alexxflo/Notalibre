@@ -1,100 +1,17 @@
-/**
- * Core Philosophy: This ruleset enforces a strict user-ownership model. All data is
- * segregated by user ID, and a user can only ever access their own data.
- * The primary goal is to ensure data privacy and prevent any user from reading,
- * writing, or even knowing about the existence of another user's data.
- *
- * Data Structure: The data is organized under a single top-level collection `/users`.
- * Each user's data is stored in a document where the document ID is the user's
- * unique Firebase Authentication UID (e.g., /users/{userId}). This creates a
- * secure, path-based ownership structure.
- *
- * Key Security Decisions:
- * - User Listing Disabled: It is impossible to list all users. A user can only "list"
- *   (query) for their own specific user document.
- * - Strict Ownership: All operations (read, write, delete) are gated by a check
- *   that ensures the requesting user's UID matches the `userId` in the document path.
- * - Self-Creation: A signed-in user is permitted to create their own user profile
- *   document, but not one for any other user ID.
- * - Immutable Identity: Once a user profile is created, its core identity fields
- *   (like 'id' and 'googleId') cannot be changed. This prevents ownership hijacking.
- *
- * Denormalization for Authorization: This ruleset leverages path-based security,
- * which is the most efficient form of authorization. By using the user's auth UID
- * as the document ID, we avoid costly `get()` or `exists()` calls to other
- * documents for authorization checks.
- *
- * Structural Segregation: The `/users/{userId}` structure inherently segregates
- * each user's data, making it impossible for a query from one user to accidentally
- * access data belonging to another. This is critical for query security.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ----------------------------------------------------------------------
-    // Helper Functions
-    // ----------------------------------------------------------------------
-
-    /**
-     * Checks if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Validates that the requesting user is the owner of the document based on the path.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * For update/delete, ensures the document exists and the user is the owner.
-     * Prevents modifying or deleting non-existent documents.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * On create, validates that the document's internal 'id' field matches the
-     * user's auth UID, ensuring path and data consistency.
-     */
-    function hasValidProfileDataOnCreate(userId) {
-      return request.resource.data.id == userId;
-    }
-
-    /**
-     * On update, ensures that critical identity fields cannot be changed.
-     * This check works for partial updates because request.resource.data represents
-     * the final merged state of the document.
-     */
-    function isImmutableIdentity() {
-      return request.resource.data.id == resource.data.id && request.resource.data.googleId == resource.data.googleId;
-    }
-
-    // ----------------------------------------------------------------------
-    // Collection Rules
-    // ----------------------------------------------------------------------
-
-    /**
-     * @description Manages user profile documents. Enforces strict ownership, allowing
-     * users to create, read, update, and delete only their own profile.
-     * @path /users/{userId}
-     * @allow (create) A newly signed-in user with auth.uid 'user_abc' creating their
-     * own profile document at `/users/user_abc`.
-     * @deny (get) A user with auth.uid 'user_abc' trying to read data from
-     * `/users/user_xyz`.
-     * @principle Restricts access to a user's own data tree.
-     */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && hasValidProfileDataOnCreate(userId);
-      allow update: if isExistingOwner(userId) && isImmutableIdentity();
-      allow delete: if isExistingOwner(userId);
+      allow read, write: if isOwner(userId);
     }
   }
 }
