@@ -3,7 +3,8 @@
 import CampaignCard from './CampaignCard';
 import { Users, Loader2 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import type { Campaign } from '@/types';
 
 type EarnSectionProps = {
   coinBalance: number;
@@ -16,16 +17,20 @@ export default function EarnSection({ coinBalance, updateCoinBalance }: EarnSect
 
   const campaignsQuery = useMemoFirebase(() => {
     if (!user) return null;
+    // Simplified query to fetch the 50 most recent campaigns.
+    // Filtering is now done on the client-side to avoid complex queries
+    // that can conflict with security rules.
     return query(
         collection(firestore, 'campaigns'),
-        where('userId', '!=', user.uid),
-        orderBy('userId'), // Firestore requires orderBy when using '!='
         orderBy('createdAt', 'desc'),
         limit(50)
     );
   }, [firestore, user]);
 
-  const { data: campaigns, isLoading } = useCollection(campaignsQuery);
+  const { data: campaigns, isLoading } = useCollection<Campaign>(campaignsQuery);
+  
+  // Filter out the current user's own campaigns on the client-side.
+  const otherUserCampaigns = campaigns?.filter(campaign => campaign.userId !== user?.uid);
 
   return (
     <div className="w-full max-w-4xl flex flex-col gap-6 p-2 md:p-6 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-cyan-500/20">
@@ -41,8 +46,8 @@ export default function EarnSection({ coinBalance, updateCoinBalance }: EarnSect
                 <Loader2 className="h-12 w-12 animate-spin text-cyan-400" />
               </div>
             )}
-            {!isLoading && campaigns && campaigns.length > 0 ? (
-                campaigns.map(campaign => (
+            {!isLoading && otherUserCampaigns && otherUserCampaigns.length > 0 ? (
+                otherUserCampaigns.map(campaign => (
                     <CampaignCard 
                         key={campaign.id} 
                         campaign={campaign} 
