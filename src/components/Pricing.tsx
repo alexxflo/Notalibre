@@ -184,6 +184,9 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+                <p className="text-xs text-slate-500 mt-4">
+                    Las monedas pueden tardar de 24 a 48 horas en verse reflejadas por transferencia.
+                </p>
             </CardContent>
         </Card>
       </div>
