@@ -12,7 +12,6 @@ const VortexLogo = ({ className }: { className?: string }) => {
       <defs>
         <linearGradient id="vortex-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="hsl(var(--primary))" />
-          <stop offset="50%" stopColor="#c026d3" />
           <stop offset="100%" stopColor="hsl(var(--secondary))" />
         </linearGradient>
          <filter id="vortex-glow">
@@ -45,7 +44,7 @@ const VortexLogo = ({ className }: { className?: string }) => {
         fontSize="80" 
         className="font-logo"
         fontWeight="900"
-        fill="white"
+        fill="url(#vortex-gradient)"
         letterSpacing="-0.02em"
         style={{ fontStyle: 'italic' }}
       >
