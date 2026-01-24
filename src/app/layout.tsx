@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'VORTEX - Social Engine',
+  title: 'VORTEX - Social Engine Protocol',
   description: 'Acelera tu Crecimiento Social.',
 };
 
