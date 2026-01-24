@@ -3,9 +3,15 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
-import { Gem, Copy, Star, Loader2 } from 'lucide-react';
+import { Gem, Copy, Star, Loader2, Upload } from 'lucide-react';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useUser } from '@/firebase';
+import { WhatsAppIcon } from './icons';
 
 const coinPackages = [
   { coins: 40, price: 20, id: 'basic' },
@@ -15,6 +21,7 @@ const coinPackages = [
 ];
 
 const bankAccount = '638180000106470075';
+const whatsappNumber = '555658925846';
 
 type PricingProps = {
     coinBalance: number;
@@ -23,7 +30,12 @@ type PricingProps = {
 
 export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps) {
   const { toast } = useToast();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | undefined>(undefined);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+
 
   const handleCopy = () => {
     navigator.clipboard.writeText(bankAccount);
@@ -46,6 +58,33 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
       });
     }, 3000);
   };
+
+  const handleSendWhatsApp = () => {
+    if (!selectedPackageId || !user) {
+        toast({
+            variant: "destructive",
+            title: "Faltan datos",
+            description: "Por favor, selecciona el paquete que pagaste.",
+        });
+        return;
+    }
+
+    const selectedPkg = coinPackages.find(p => p.id === selectedPackageId);
+    if (!selectedPkg) return;
+
+    const message = `Hola, he realizado una transferencia para el paquete de ${selectedPkg.coins} monedas por $${selectedPkg.price} MXN. Mi ID de usuario es: ${user.uid}. ¡Gracias!`;
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+
+    window.open(whatsappUrl, '_blank');
+    setIsTransferDialogOpen(false);
+    
+    toast({
+        title: "¡Todo listo para enviar!",
+        description: "Se abrirá WhatsApp para que envíes tu comprobante. Una vez verificado, tus monedas serán añadidas.",
+    });
+};
+
 
   return (
     <>
@@ -84,7 +123,7 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
                 <p className="text-4xl font-bold text-white">${pkg.price}<span className="text-lg font-medium text-slate-400"> MXN</span></p>
               </CardContent>
               <CardFooter>
-                  <Button onClick={() => handlePurchase(pkg)} className="w-full font-headline uppercase h-12 text-lg" variant={pkg.popular ? 'default' : 'outline'}>Comprar Ahora</Button>
+                  <Button onClick={() => handlePurchase(pkg)} className="w-full font-headline uppercase h-12 text-lg" variant={pkg.popular ? 'default' : 'secondary'}>Comprar Ahora</Button>
               </CardFooter>
             </Card>
           ))}
@@ -92,17 +131,59 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
         <Card className="mt-16 text-center shadow-lg bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl">
             <CardHeader>
                 <CardTitle className="font-headline text-2xl text-white">¿Prefieres transferencia?</CardTitle>
-                <CardDescription className="text-slate-400">Para transferencias manuales, envía comprobante al Admin.</CardDescription>
+                <CardDescription className="text-slate-400">Envía tu comprobante para una recarga manual.</CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="text-slate-300">Realiza un depósito o transferencia a la siguiente cuenta bancaria:</p>
-                <div className="my-4 p-3 bg-slate-900 rounded-md inline-flex items-center gap-4 ring-1 ring-slate-700">
-                    <p className="text-lg font-mono tracking-widest text-white">{bankAccount}</p>
-                    <Button variant="ghost" size="icon" onClick={handleCopy} aria-label="Copiar número de cuenta" className="text-slate-400 hover:text-white">
-                      <Copy className="h-5 w-5" />
-                    </Button>
-                </div>
-                <p className="text-sm text-slate-500">Una vez realizado el pago, contacta a soporte para que tus monedas sean añadidas.</p>
+                <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full max-w-sm">Verificar Pago por Transferencia</Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-slate-900 border-magenta-500/50">
+                        <DialogHeader>
+                            <DialogTitle className="text-magenta-400">Verificación de Pago Manual</DialogTitle>
+                            <DialogDescription>
+                                Completa los siguientes pasos para que podamos verificar tu pago y añadir las monedas a tu cuenta.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                             <div>
+                                <p className="text-slate-300 text-sm">Realiza tu depósito a la siguiente cuenta y guarda el comprobante:</p>
+                                <div className="my-2 p-3 bg-slate-800 rounded-md inline-flex items-center gap-4 ring-1 ring-slate-700 w-full">
+                                    <p className="text-lg font-mono tracking-widest text-white flex-grow">{bankAccount}</p>
+                                    <Button variant="ghost" size="icon" onClick={handleCopy} aria-label="Copiar número de cuenta" className="text-slate-400 hover:text-white">
+                                      <Copy className="h-5 w-5" />
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="package">Paquete que pagaste</Label>
+                                <Select onValueChange={setSelectedPackageId} value={selectedPackageId}>
+                                    <SelectTrigger className="w-full bg-slate-800 border-slate-700">
+                                        <SelectValue placeholder="Selecciona el paquete" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-slate-900 border-slate-700">
+                                        {coinPackages.map((pkg) => (
+                                            <SelectItem key={pkg.id} value={pkg.id}>
+                                                {pkg.coins} monedas por ${pkg.price} MXN
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="receipt">Sube tu comprobante</Label>
+                                <Input id="receipt" type="file" onChange={(e) => setReceiptFile(e.target.files ? e.target.files[0] : null)} className="bg-slate-800 border-slate-700 file:text-magenta-300" />
+                                <p className="text-xs text-slate-500">Nota: Tendrás que adjuntar la imagen manualmente en el chat de WhatsApp.</p>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button onClick={handleSendWhatsApp} disabled={!selectedPackageId || !receiptFile} className="w-full bg-green-600 hover:bg-green-500 text-white">
+                                <WhatsAppIcon className="mr-2 h-5 w-5"/>
+                                Enviar Comprobante por WhatsApp
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </CardContent>
         </Card>
       </div>
