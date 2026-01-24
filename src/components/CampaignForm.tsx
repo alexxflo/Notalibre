@@ -6,29 +6,36 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from "@/hooks/use-toast";
 import { useCampaigns } from '@/context/CampaignContext';
-import { UserPlus } from 'lucide-react';
+import { Rocket, AlertTriangle } from 'lucide-react';
+import { View } from '@/app/page';
 
-const COST_PER_CAMPAIGN = 5;
+const COST_PER_FOLLOWER = 5;
 
 type CampaignFormProps = {
   coinBalance: number;
   updateCoinBalance: (newBalance: number) => void;
+  setView: (view: View) => void;
 };
 
-export default function CampaignForm({ coinBalance, updateCoinBalance }: CampaignFormProps) {
+export default function CampaignForm({ coinBalance, updateCoinBalance, setView }: CampaignFormProps) {
   const { toast } = useToast();
   const { addCampaign } = useCampaigns();
   const [url, setUrl] = useState('');
   const [socialNetwork, setSocialNetwork] = useState<'TikTok' | 'Facebook' | 'Instagram'>('TikTok');
   const [username, setUsername] = useState('');
+  const [followers, setFollowers] = useState(1);
+
+  const totalCost = followers * COST_PER_FOLLOWER;
 
   const handlePublish = () => {
-    if (coinBalance < COST_PER_CAMPAIGN) {
+    if (coinBalance < totalCost) {
       toast({
         variant: "destructive",
         title: "Fondos Insuficientes",
-        description: `Necesitas al menos ${COST_PER_CAMPAIGN} monedas para crear una campaña.`,
+        description: `Necesitas ${totalCost} monedas, pero solo tienes ${coinBalance}.`,
+        action: <Button onClick={() => setView('store')}>Ir a la Tienda</Button>,
       });
+      setTimeout(() => setView('store'), 2000);
       return;
     }
     if (!url.startsWith('https://')) {
@@ -47,27 +54,40 @@ export default function CampaignForm({ coinBalance, updateCoinBalance }: Campaig
         });
         return;
     }
+    if (followers < 1) {
+        toast({
+            variant: "destructive",
+            title: "Cantidad inválida",
+            description: "Debes solicitar al menos 1 seguidor.",
+        });
+        return;
+    }
 
-
-    updateCoinBalance(coinBalance - COST_PER_CAMPAIGN);
-    addCampaign({
-      usuario: username,
-      red_social: socialNetwork,
-      url: url,
-    });
+    updateCoinBalance(coinBalance - totalCost);
+    
+    for (let i = 0; i < followers; i++) {
+        addCampaign({
+            usuario: username,
+            red_social: socialNetwork,
+            url: url,
+        });
+    }
 
     toast({
       title: "¡Campaña Publicada!",
-      description: `Has gastado ${COST_PER_CAMPAIGN} monedas. Tu perfil ahora es visible para otros.`,
+      description: `Has gastado ${totalCost} monedas para conseguir ${followers} seguidores.`,
     });
+    
     setUrl('');
     setUsername('');
+    setFollowers(1);
+    setView('home');
   };
 
   return (
-    <div className="flex flex-col gap-4 p-6 bg-primary/5 rounded-lg border border-primary/20">
+    <div className="flex flex-col gap-4 p-6 bg-primary/5 rounded-lg border border-primary/20 max-w-2xl mx-auto w-full">
         <h3 className="font-headline text-xl font-semibold text-primary">Crea una Campaña para Ganar Seguidores</h3>
-        <p className="text-card-foreground/80">Publica tu perfil para que otros te sigan. Cada campaña te asegura un seguidor.</p>
+        <p className="text-card-foreground/80">Publica tu perfil para que otros te sigan. Cada seguidor que consigas costará {COST_PER_FOLLOWER} monedas.</p>
         
         <div className="space-y-4">
             <Input 
@@ -90,11 +110,24 @@ export default function CampaignForm({ coinBalance, updateCoinBalance }: Campaig
                     <SelectItem value="Facebook">Facebook</SelectItem>
                 </SelectContent>
             </Select>
+            <Input
+                type="number"
+                placeholder="¿Cuántos seguidores quieres?"
+                value={followers}
+                onChange={(e) => setFollowers(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                min="1"
+            />
         </div>
         
-        <p className="font-bold text-lg text-center">Costo: <span className="text-primary">{COST_PER_CAMPAIGN} Monedas</span></p>
-        <Button onClick={handlePublish} disabled={coinBalance < COST_PER_CAMPAIGN || !url || !username}>
-            <UserPlus className="mr-2 h-4 w-4" /> Publicar Campaña
+        <div className={`p-4 rounded-md text-center ${coinBalance < totalCost ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
+            <p className="font-bold text-lg">Costo Total: <span className="font-mono">{totalCost} Monedas</span></p>
+            {coinBalance < totalCost && (
+                <p className="text-sm font-semibold flex items-center justify-center gap-2 mt-1"><AlertTriangle className="h-4 w-4"/> Saldo insuficiente</p>
+            )}
+        </div>
+
+        <Button onClick={handlePublish} disabled={!url || !username || followers < 1}>
+            <Rocket className="mr-2 h-4 w-4" /> Lanzar Campaña ({totalCost} Monedas)
         </Button>
     </div>
   );

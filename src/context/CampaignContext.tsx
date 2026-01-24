@@ -30,7 +30,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const addCampaign = useCallback((campaign: Omit<Campaign, 'id' | 'recompensa'>) => {
     const newCampaign: Campaign = {
       ...campaign,
-      id: Date.now(),
+      id: Date.now() + Math.random(),
       recompensa: 3,
     };
     setCampaigns(prev => [newCampaign, ...prev]);
