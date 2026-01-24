@@ -10,6 +10,7 @@ import EarnSection from '@/components/EarnSection';
 import Pricing from '@/components/Pricing';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CampaignProvider } from '@/context/CampaignContext';
+import Footer from '@/components/Footer';
 
 const GATEKEEPER_KEY = 'salvafans_gatekeeper_passed';
 const COIN_BALANCE_KEY = 'salvafans_coin_balance';
