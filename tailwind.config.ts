@@ -12,6 +12,7 @@ export default {
       fontFamily: {
         body: ['PT Sans', 'sans-serif'],
         headline: ['Poppins', 'sans-serif'],
+        orbitron: ['Orbitron', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
