@@ -21,7 +21,7 @@ const coinPackages = [
 ];
 
 const bankAccount = '638180000106470075';
-const whatsappNumber = '555658925846';
+const whatsappNumber = '525658925846';
 
 type PricingProps = {
     coinBalance: number;
