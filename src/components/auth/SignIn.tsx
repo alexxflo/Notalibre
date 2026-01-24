@@ -42,7 +42,6 @@ export default function SignIn() {
         await setDoc(userDocRef, newUserProfile);
       }
     } catch (error) {
-      console.error('Error during Google Sign-In:', error);
       const authError = error as AuthError;
 
       if (authError.code === 'auth/operation-not-allowed') {
