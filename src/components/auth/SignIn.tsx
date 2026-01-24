@@ -1,12 +1,12 @@
 'use client';
 
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import {
   GoogleAuthProvider,
   signInWithPopup,
   type AuthError,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, increment } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { GoogleIcon } from '../icons';
 import { useToast } from '@/hooks/use-toast';
@@ -39,8 +39,20 @@ export default function SignIn() {
           gatekeeperPassed: false,
         };
         // We use setDoc here because it's a one-time critical creation.
-        // For subsequent updates, we should use non-blocking updates.
         await setDoc(userDocRef, newUserProfile);
+
+        // Increment the global user counter
+        const statsRef = doc(firestore, 'stats', 'users');
+        setDoc(statsRef, { count: increment(1) }, { merge: true })
+          .catch(err => {
+            const permissionError = new FirestorePermissionError({
+              path: statsRef.path,
+              operation: 'update',
+              requestResourceData: { count: 'increment(1)' },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          });
+
       }
     } catch (error) {
       const authError = error as AuthError;

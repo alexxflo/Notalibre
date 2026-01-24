@@ -1,26 +1,53 @@
 import { Button } from './ui/button';
 import CoinBalance from './CoinBalance';
-import { Gem } from 'lucide-react';
+import { Gem, Users } from 'lucide-react';
 import { View } from '@/app/page';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import UserMenu from './auth/UserMenu';
 import { Skeleton } from './ui/skeleton';
 import VortexLogo from './VortexLogo';
+import { doc } from 'firebase/firestore';
 
 type HeaderProps = {
   coinBalance: number;
   setView: (view: View) => void;
 };
 
+function UserCounter() {
+  const firestore = useFirestore();
+  const statsRef = useMemoFirebase(() => doc(firestore, 'stats', 'users'), [firestore]);
+  const { data: stats, isLoading } = useDoc(statsRef);
+
+  if (isLoading) {
+    return <Skeleton className="h-6 w-28 bg-slate-700" />;
+  }
+
+  const count = stats?.count ?? 0;
+
+  return (
+    <div className="hidden md:flex items-center gap-2 text-slate-400">
+      <Users className="h-5 w-5 text-cyan-400" />
+      <span className="font-semibold text-white">{count.toLocaleString()}</span>
+      <span className="text-sm">Usuarios</span>
+    </div>
+  )
+}
+
+
 export default function Header({ coinBalance, setView }: HeaderProps) {
   const { isUserLoading } = useUser();
 
   return (
     <header className="bg-slate-900/50 backdrop-blur-lg sticky top-0 z-40 border-b border-slate-700/50">
-      <div className="container mx-auto flex justify-between items-center p-4">
+      <div className="container mx-auto flex justify-between items-center p-4 relative">
         <div onClick={() => setView('home')} className="cursor-pointer">
             <VortexLogo className="w-36 md:w-40 h-auto" />
         </div>
+
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <UserCounter />
+        </div>
+
         <div className="flex items-center gap-4">
           {isUserLoading ? (
             <Skeleton className="h-10 w-24 rounded-full bg-slate-700" />

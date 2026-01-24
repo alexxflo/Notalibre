@@ -35,6 +35,20 @@
         "coinBalance",
         "gatekeeperPassed"
       ]
+    },
+    "Stats": {
+      "title": "Stats",
+      "type": "object",
+      "description": "Represents statistical data for the application.",
+      "properties": {
+        "count": {
+          "type": "number",
+          "description": "A generic counter."
+        }
+      },
+      "required": [
+        "count"
+      ]
     }
   },
   "auth": {
@@ -48,6 +62,12 @@
         "$ref": "#/entities/UserProfile"
       },
       "description": "Stores user profile data. The 'userId' parameter corresponds to the authenticated user's UID, ensuring path-based ownership."
+    },
+    "/stats/users": {
+      "schema": {
+        "$ref": "#/entities/Stats"
+      },
+      "description": "Stores the total count of registered users."
     }
   }
 }
