@@ -6,7 +6,7 @@ const VortexLogo = ({ className }: { className?: string }) => {
     <div className={className}>
       <div className="relative w-full h-full">
         <Image
-          src="https://i.imgur.com/g0xw5P5.png"
+          src="https://i.imgur.com/rY6YdRq.png"
           alt="VORTEX Logo"
           fill
           className="object-contain"
