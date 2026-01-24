@@ -10,16 +10,16 @@ type HeaderProps = {
 
 export default function Header({ coinBalance, setView }: HeaderProps) {
   return (
-    <header className="bg-card/80 backdrop-blur-lg sticky top-0 z-40 border-b">
+    <header className="bg-slate-900/50 backdrop-blur-lg sticky top-0 z-40 border-b border-slate-700/50">
       <div className="container mx-auto flex justify-between items-center p-4">
         <h1 
-          className="text-3xl font-bold font-headline text-primary cursor-pointer"
+          className="text-3xl font-bold font-headline text-cyan-400 cursor-pointer uppercase tracking-widest"
           onClick={() => setView('home')}
         >
           SalvaFans
         </h1>
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={() => setView('store')}>
+          <Button variant="outline" size="sm" onClick={() => setView('store')} className="border-cyan-400 text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300 uppercase">
             <Gem className="mr-2 h-4 w-4"/>
             Comprar Monedas
           </Button>

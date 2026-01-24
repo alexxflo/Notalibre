@@ -31,26 +31,26 @@ export default function GatekeeperModal({ onConfirm }: GatekeeperModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md text-center shadow-2xl animate-in fade-in-50 zoom-in-90">
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md text-center shadow-2xl animate-in fade-in-50 zoom-in-90 bg-slate-900 border-cyan-500/50 shadow-cyan-500/20">
         <CardHeader>
-          <CardTitle className="font-headline text-3xl">¡Bienvenido a SalvaFans!</CardTitle>
-          <CardDescription>Un último paso para empezar a ganar seguidores.</CardDescription>
+          <CardTitle className="font-headline text-3xl text-white uppercase">¡Bienvenido a SalvaFans!</CardTitle>
+          <CardDescription className="text-slate-400">Un último paso para empezar a ganar seguidores.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-6">
-          <p className="font-bold text-lg text-primary">Sigue a @AlexxIA para desbloquear</p>
+          <p className="font-bold text-lg text-cyan-400">Sigue a @AlexxIA para desbloquear</p>
           {!isFollowing ? (
-            <Button onClick={handleFollowClick} size="lg" className="font-headline shadow-lg animate-pulse">
+            <Button onClick={handleFollowClick} size="lg" className="font-headline shadow-lg animate-pulse bg-white text-black hover:bg-gray-200">
                 <TikTokIcon className="mr-2 h-5 w-5" />
               Ir a TikTok y Seguir
             </Button>
           ) : (
             <div className="flex flex-col items-center gap-4 w-full">
-              <div className="w-full bg-muted rounded-full h-2.5">
-                  <div className="bg-primary h-2.5 rounded-full" style={{ width: `${(20 - countdown) / 20 * 100}%`, transition: 'width 1s linear' }}></div>
+              <div className="w-full bg-slate-700 rounded-full h-2.5">
+                  <div className="bg-cyan-400 h-2.5 rounded-full" style={{ width: `${(20 - countdown) / 20 * 100}%`, transition: 'width 1s linear' }}></div>
               </div>
-              <p className="text-muted-foreground">Espera {countdown} segundos para confirmar...</p>
-              <Button onClick={onConfirm} disabled={countdown > 0} size="lg" className="font-headline w-full">
+              <p className="text-slate-400">Espera {countdown} segundos para confirmar...</p>
+              <Button onClick={onConfirm} disabled={countdown > 0} size="lg" className="font-headline w-full bg-cyan-500 text-black hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-400">
                 Confirmar
               </Button>
             </div>

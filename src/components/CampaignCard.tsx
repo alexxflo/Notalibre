@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
 import { Campaign, useCampaigns } from '@/context/CampaignContext';
-import { TikTokIcon } from './icons';
-import { Instagram, Facebook } from 'lucide-react';
+import { CheckCircle, Clock } from 'lucide-react';
 
 type CampaignCardProps = {
   campaign: Campaign;
@@ -52,42 +52,48 @@ export default function CampaignCard({ campaign, coinBalance, updateCoinBalance 
   const getButton = () => {
     switch (status) {
       case 'idle':
-        return <Button onClick={handleFollow}>Seguir (+{campaign.recompensa} Monedas)</Button>;
+        return <Button onClick={handleFollow} className="bg-cyan-500 text-black hover:bg-cyan-400 font-bold uppercase w-full md:w-auto">Seguir (+{campaign.recompensa} Monedas)</Button>;
       case 'pending':
         return (
           <div className="w-full flex flex-col items-center gap-2">
-            <div className="w-full bg-muted rounded-full h-2.5">
-                <div className="bg-primary h-2.5 rounded-full" style={{ width: `${(COUNTDOWN_SECONDS - countdown) / COUNTDOWN_SECONDS * 100}%`, transition: 'width 1s linear' }}></div>
+            <div className="w-full bg-slate-700 rounded-full h-2.5">
+                <div className="bg-cyan-400 h-2.5 rounded-full" style={{ width: `${(COUNTDOWN_SECONDS - countdown) / COUNTDOWN_SECONDS * 100}%`, transition: 'width 1s linear' }}></div>
             </div>
-            <Button disabled>Verificando... ({countdown}s)</Button>
+            <Button disabled className="w-full md:w-auto uppercase">
+                <Clock className="mr-2" />
+                Verificando... ({countdown}s)
+            </Button>
           </div>
         );
       case 'claimable':
-        return <Button onClick={handleClaim}>Reclamar Recompensa</Button>;
+        return (
+            <Button onClick={handleClaim} className="bg-green-500 text-black hover:bg-green-400 font-bold uppercase w-full md:w-auto shadow-[0_0_15px_rgba(74,222,128,0.5)]">
+                <CheckCircle className="mr-2" />
+                Reclamar Recompensa
+            </Button>
+        );
     }
   };
-  
-  const getIcon = () => {
-    switch(campaign.red_social) {
-      case 'TikTok':
-        return <TikTokIcon className="h-6 w-6 text-foreground" />;
-      case 'Instagram':
-        return <Instagram className="h-6 w-6 text-foreground" />;
-      case 'Facebook':
-        return <Facebook className="h-6 w-6 text-foreground" />;
-    }
-  }
 
   return (
-    <Card className="p-4 flex justify-between items-center">
+    <Card className="p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-2xl">
       <div className="flex items-center gap-4">
-        {getIcon()}
+        <Image
+          src={campaign.avatarUrl}
+          alt={campaign.usuario}
+          width={64}
+          height={64}
+          className="rounded-full border-2 border-cyan-400 shadow-lg"
+          unoptimized // Required for unavatar
+        />
         <div>
-            <p className="font-bold">{campaign.usuario}</p>
-            <p className="text-sm text-muted-foreground">{campaign.red_social}</p>
+            <p className="font-bold text-lg text-white">{campaign.usuario}</p>
+            <p className="text-sm text-cyan-400 font-semibold">{campaign.red_social}</p>
         </div>
       </div>
-      {getButton()}
+      <div className="w-full md:w-auto md:min-w-[240px]">
+        {getButton()}
+      </div>
     </Card>
   );
 }

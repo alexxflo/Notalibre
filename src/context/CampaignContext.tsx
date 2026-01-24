@@ -5,9 +5,10 @@ import { createContext, useContext, useState, ReactNode, useCallback } from 'rea
 export interface Campaign {
   id: number;
   usuario: string;
-  red_social: 'TikTok' | 'Facebook' | 'Instagram';
+  red_social: 'TikTok' | 'Facebook' | 'Instagram' | 'generic';
   url: string;
   recompensa: number;
+  avatarUrl: string;
 }
 
 interface CampaignContextType {
@@ -19,9 +20,9 @@ interface CampaignContextType {
 const CampaignContext = createContext<CampaignContextType | undefined>(undefined);
 
 const initialCampaigns: Campaign[] = [
-  { id: 1, usuario: '@influencer_cool', red_social: 'TikTok', url: 'https://www.tiktok.com/@charlidamelio', recompensa: 3 },
-  { id: 2, usuario: '@viajero_digital', red_social: 'Instagram', url: 'https://www.instagram.com/instagram', recompensa: 3 },
-  { id: 3, usuario: '@gamer_pro', red_social: 'Facebook', url: 'https://www.facebook.com/facebook', recompensa: 3 },
+  { id: 1, usuario: '@charlidamelio', red_social: 'TikTok', url: 'https://www.tiktok.com/@charlidamelio', recompensa: 3, avatarUrl: 'https://unavatar.io/tiktok/charlidamelio' },
+  { id: 2, usuario: '@instagram', red_social: 'Instagram', url: 'https://www.instagram.com/instagram', recompensa: 3, avatarUrl: 'https://unavatar.io/instagram/instagram' },
+  { id: 3, usuario: '@facebook', red_social: 'Facebook', url: 'https://www.facebook.com/facebook', recompensa: 3, avatarUrl: 'https://unavatar.io/facebook/facebook' },
 ];
 
 export function CampaignProvider({ children }: { children: ReactNode }) {
@@ -33,6 +34,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       id: Date.now() + Math.random(),
       recompensa: 3,
     };
+    // Create multiple campaigns based on the requested followers
     setCampaigns(prev => [newCampaign, ...prev]);
   }, []);
 
