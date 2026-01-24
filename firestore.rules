@@ -20,14 +20,14 @@ service cloud.firestore {
     }
 
     match /campaigns/{campaignId} {
-      // Allow reading single documents and listing the collection for any signed-in user.
-      allow get, list: if isSignedIn();
+      // Allow any signed-in user to read the full list of campaigns.
+      allow read: if request.auth != null;
       
       // Allow creating a campaign only if the userId in the document matches the creator's ID.
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
 
       // Any signed in user can delete (claim) a campaign, as long as it's not their own.
-      allow delete: if isSignedIn() && resource.data.userId != request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId != request.auth.uid;
     }
   }
 }
