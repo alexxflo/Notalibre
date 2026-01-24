@@ -12,8 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CampaignProvider } from '@/context/CampaignContext';
 import Footer from '@/components/Footer';
 
-const GATEKEEPER_KEY = 'salvafans_gatekeeper_passed';
-const COIN_BALANCE_KEY = 'salvafans_coin_balance';
+const GATEKEEPER_KEY = 'vortex_gatekeeper_passed';
+const COIN_BALANCE_KEY = 'vortex_coin_balance';
 const WELCOME_BONUS = 50;
 
 export type View = 'home' | 'earn' | 'create' | 'store';
@@ -81,7 +81,7 @@ export default function Home() {
       default:
         return (
           <div className="text-center">
-            <h2 className="text-3xl md:text-5xl font-bold font-headline mb-4 uppercase tracking-wider text-white">¿Qué quieres hacer hoy?</h2>
+            <h2 className="text-3xl md:text-5xl font-bold font-headline mb-4 uppercase tracking-wider text-white">Domina el Algoritmo</h2>
             <p className="text-slate-400 mb-8 md:mb-12 text-lg max-w-2xl mx-auto">Elige una opción para empezar a interactuar con la comunidad y hacer crecer tu perfil.</p>
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               <div 

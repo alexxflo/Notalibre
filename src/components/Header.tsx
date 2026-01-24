@@ -13,10 +13,10 @@ export default function Header({ coinBalance, setView }: HeaderProps) {
     <header className="bg-slate-900/50 backdrop-blur-lg sticky top-0 z-40 border-b border-slate-700/50">
       <div className="container mx-auto flex justify-between items-center p-4">
         <h1 
-          className="text-3xl font-bold font-headline text-cyan-400 cursor-pointer uppercase tracking-widest"
+          className="text-3xl font-bold font-headline text-white cursor-pointer uppercase tracking-widest shadow-[0_0_15px_hsl(var(--primary))] transition-shadow hover:shadow-[0_0_25px_hsl(var(--primary))]"
           onClick={() => setView('home')}
         >
-          SalvaFans
+          VORTEX
         </h1>
         <div className="flex items-center gap-4">
           <Button variant="outline" size="sm" onClick={() => setView('store')} className="border-cyan-400 text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300 uppercase">
