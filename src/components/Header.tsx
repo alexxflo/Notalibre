@@ -39,9 +39,9 @@ export default function Header({ coinBalance, setView }: HeaderProps) {
 
   return (
     <header className="bg-slate-900/50 backdrop-blur-lg sticky top-0 z-40 border-b border-slate-700/50">
-      <div className="container mx-auto flex justify-between items-center p-4 relative">
+      <div className="container mx-auto flex justify-between items-center p-4">
         <div onClick={() => setView('home')} className="cursor-pointer">
-            <VortexLogo className="w-48 h-12" />
+            <VortexLogo className="relative w-48 h-12" />
         </div>
 
         <div className="absolute left-1/2 -translate-x-1/2">

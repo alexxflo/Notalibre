@@ -78,7 +78,7 @@ export default function SignIn() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white p-4">
       <div className="text-center mb-8">
-        <VortexLogo className="w-80 h-32" />
+        <VortexLogo className="relative w-80 h-32" />
         <p className="text-xl text-slate-400 mt-4">
           Acelera tu Crecimiento Social.
         </p>
