@@ -74,7 +74,7 @@ export default function Home() {
         return (
           <div className="w-full flex flex-col items-center">
             {backButton}
-            <Pricing />
+            <Pricing coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />
           </div>
         );
       case 'home':
