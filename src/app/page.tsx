@@ -7,6 +7,7 @@ import FollowExchange from '@/components/FollowExchange';
 import Pricing from '@/components/Pricing';
 import Footer from '@/components/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CampaignProvider } from '@/context/CampaignContext';
 
 const GATEKEEPER_KEY = 'salvafans_gatekeeper_passed';
 const COIN_BALANCE_KEY = 'salvafans_coin_balance';
@@ -60,16 +61,18 @@ export default function Home() {
       {!isGatekeeperPassed ? (
         <GatekeeperModal onConfirm={handleGatekeeperConfirm} />
       ) : (
-        <div className="min-h-screen flex flex-col bg-background">
-          <Header coinBalance={coinBalance} />
-          <main className="flex-grow container mx-auto p-4 md:p-8">
-            <div className="space-y-12 md:space-y-16">
-              <FollowExchange coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />
-              <Pricing />
-            </div>
-          </main>
-          <Footer />
-        </div>
+        <CampaignProvider>
+          <div className="min-h-screen flex flex-col bg-background">
+            <Header coinBalance={coinBalance} />
+            <main className="flex-grow container mx-auto p-4 md:p-8">
+              <div className="space-y-12 md:space-y-16">
+                <FollowExchange coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />
+                <Pricing />
+              </div>
+            </main>
+            <Footer />
+          </div>
+        </CampaignProvider>
       )}
     </>
   );
