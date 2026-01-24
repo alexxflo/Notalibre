@@ -8,9 +8,10 @@ import { Gem, Copy, Star, Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const coinPackages = [
-  { coins: 100, price: 20, id: 'basic' },
-  { coins: 300, price: 35, id: 'popular', popular: true },
-  { coins: 1000, price: 50, id: 'premium' },
+  { coins: 40, price: 20, id: 'basic' },
+  { coins: 80, price: 35, id: 'standard' },
+  { coins: 120, price: 50, id: 'premium' },
+  { coins: 300, price: 100, id: 'pro', popular: true },
 ];
 
 const bankAccount = '638180000106470075';
@@ -65,7 +66,7 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
           <h2 className="text-4xl font-bold font-headline text-cyan-400 uppercase">Tienda de Monedas</h2>
           <p className="text-slate-400 mt-2 text-lg">Compra monedas para aumentar tu visibilidad y conseguir más seguidores.</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
           {coinPackages.map((pkg) => (
             <Card key={pkg.id} className={`flex flex-col bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl transition-all hover:border-cyan-500/50 ${pkg.popular ? 'border-cyan-500 shadow-lg shadow-cyan-500/20 relative' : 'shadow-md'}`}>
               {pkg.popular && (
