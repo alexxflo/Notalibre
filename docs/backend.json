@@ -1,0 +1,68 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user profile in the SalvaFans application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "googleId": {
+          "type": "string",
+          "description": "The user's Google ID, used for authentication."
+        },
+        "username": {
+          "type": "string",
+          "description": "The user's username."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "coinBalance": {
+          "type": "number",
+          "description": "The user's current coin balance.",
+          "format": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "googleId",
+        "username",
+        "email",
+        "coinBalance"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile data. The 'userId' parameter corresponds to the authenticated user's UID, ensuring path-based ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, matching their Firebase Auth UID."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability for the SalvaFans application. We leverage path-based ownership for user profiles to simplify security rules and prevent unauthorized access. The structure is designed to support the core features of the app, including the user's coin balance, the exchange of follows, and the welcome bonus, ensuring that each feature has a secure and efficient data structure.\n\nTo achieve authorization independence (CRITICAL), user profile data is stored under `/users/{userId}`, making ownership explicit and avoiding the need for `get()` calls in security rules. This allows for atomic operations on user profiles without relying on parent document data.\n\nTo enable secure `list` operations (QAPs), we are using Structural Segregation. User profiles are segregated under their respective user IDs, ensuring that listing profiles (if the need arises in the future) does not expose data from other users. The membership map pattern is not applicable in this specific scenario because it's a single-user application for their profile."
+  }
+}
