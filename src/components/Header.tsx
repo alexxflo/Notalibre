@@ -5,6 +5,7 @@ import { View } from '@/app/page';
 import { useUser } from '@/firebase';
 import UserMenu from './auth/UserMenu';
 import { Skeleton } from './ui/skeleton';
+import VortexLogo from './VortexLogo';
 
 type HeaderProps = {
   coinBalance: number;
@@ -18,14 +19,7 @@ export default function Header({ coinBalance, setView }: HeaderProps) {
     <header className="bg-slate-900/50 backdrop-blur-lg sticky top-0 z-40 border-b border-slate-700/50">
       <div className="container mx-auto flex justify-between items-center p-4">
         <div onClick={() => setView('home')} className="cursor-pointer">
-            <h1 className="font-orbitron italic tracking-tighter flex items-end">
-                <span className="text-5xl text-cyan-400 font-black transform -skew-x-12 mr-1" style={{textShadow: '0 0 10px cyan'}}>V</span>
-                <span className="text-3xl text-white self-center">O</span>
-                <span className="text-3xl text-white self-center">R</span>
-                <span className="text-6xl text-fuchsia-500 font-black transform skew-x-12 mx-1" style={{textShadow: '0 0 15px fuchsia'}}>T</span>
-                <span className="text-3xl text-white self-center">E</span>
-                <span className="text-5xl text-cyan-400 font-black transform -skew-x-12 ml-1" style={{textShadow: '0 0 10px cyan'}}>X</span>
-            </h1>
+            <VortexLogo className="w-36 md:w-40 h-auto" />
         </div>
         <div className="flex items-center gap-4">
           {isUserLoading ? (

@@ -10,6 +10,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { GoogleIcon } from '../icons';
 import { useToast } from '@/hooks/use-toast';
+import VortexLogo from '../VortexLogo';
 
 const WELCOME_BONUS = 50;
 
@@ -65,30 +66,8 @@ export default function SignIn() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white p-4">
       <div className="text-center mb-8">
-        <h1 className="font-orbitron italic tracking-tighter flex items-end justify-center mb-4">
-          <span
-            className="text-6xl md:text-8xl text-cyan-400 font-black transform -skew-x-12 mr-1"
-            style={{ textShadow: '0 0 15px cyan' }}
-          >
-            V
-          </span>
-          <span className="text-4xl md:text-6xl text-white self-center">O</span>
-          <span className="text-4xl md:text-6xl text-white self-center">R</span>
-          <span
-            className="text-7xl md:text-9xl text-fuchsia-500 font-black transform skew-x-12 mx-1"
-            style={{ textShadow: '0 0 20px fuchsia' }}
-          >
-            T
-          </span>
-          <span className="text-4xl md:text-6xl text-white self-center">E</span>
-          <span
-            className="text-6xl md:text-8xl text-cyan-400 font-black transform -skew-x-12 ml-1"
-            style={{ textShadow: '0 0 15px cyan' }}
-          >
-            X
-          </span>
-        </h1>
-        <p className="text-xl text-slate-400">
+        <VortexLogo className="w-64 h-auto" />
+        <p className="text-xl text-slate-400 mt-4">
           Acelera tu Crecimiento Social.
         </p>
       </div>
