@@ -13,6 +13,7 @@ export default {
         body: ['PT Sans', 'sans-serif'],
         headline: ['Poppins', 'sans-serif'],
         code: ['monospace'],
+        logo: ['Orbitron', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
