@@ -3,7 +3,7 @@
 import CampaignCard from './CampaignCard';
 import { Users, Loader2 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, limit } from 'firebase/firestore';
 import type { Campaign } from '@/types';
 
 type EarnSectionProps = {
@@ -17,12 +17,10 @@ export default function EarnSection({ coinBalance, updateCoinBalance }: EarnSect
 
   const campaignsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    // Simplified query to fetch the 50 most recent campaigns.
-    // Filtering is now done on the client-side to avoid complex queries
-    // that can conflict with security rules.
+    // Removed orderBy to simplify the query and diagnose a potential
+    // permissions/indexing issue.
     return query(
         collection(firestore, 'campaigns'),
-        orderBy('createdAt', 'desc'),
         limit(50)
     );
   }, [firestore, user]);
