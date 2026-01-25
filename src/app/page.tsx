@@ -14,6 +14,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase';
 import SignIn from '@/components/auth/SignIn';
+import WatchAdCard from '@/components/WatchAdCard';
 
 export type View = 'home' | 'earn' | 'create' | 'store';
 
@@ -112,6 +113,19 @@ function MainApp() {
                 <h3 className="font-headline text-2xl font-bold mb-2 uppercase text-white">Conseguir Seguidores 🚀</h3>
                 <p className="text-slate-400 mb-6">Lanza una campaña para que otros usuarios te sigan y aumenta tu audiencia.</p>
                 <Button size="lg" variant="secondary" className="w-full font-headline uppercase bg-magenta-600 text-white hover:bg-magenta-500 shadow-[0_0_15px_hsl(var(--secondary))] hover:shadow-[0_0_25px_hsl(var(--secondary))] transition-shadow">Crear Campaña</Button>
+              </div>
+            </div>
+            <div className="mt-12 w-full max-w-4xl mx-auto">
+              <div className="relative py-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-slate-700/50"></span>
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-slate-900 px-4 text-sm text-slate-400 backdrop-blur-sm">O gana monedas extra</span>
+                </div>
+              </div>
+              <div className="mt-4">
+                <WatchAdCard coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />
               </div>
             </div>
           </div>
