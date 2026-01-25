@@ -1,2 +1,2 @@
 # Notalibre
-plataforma para artistas independientes 
+plataforma para artistas independientes
