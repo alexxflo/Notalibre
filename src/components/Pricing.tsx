@@ -71,7 +71,7 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
 
         const verificationId = newDocRef.id;
 
-        const message = `Hola, he realizado una transferencia para el paquete de ${selectedPkg.coins} monedas por $${selectedPkg.price} MXN. Mi ID de verificación es: ${verificationId}. Adjunto mi comprobante. ¡Gracias! (Para el admin: responder 'ok ${verificationId}' para aprobar)`;
+        const message = `Hola, he realizado una transferencia para el paquete de ${selectedPkg.coins} monedas por $${selectedPkg.price} MXN. Mi ID de verificación es: ${verificationId}. Adjunto mi comprobante. ¡Gracias! (IMPORTANTE para el ADMIN: Para aprobar esta compra, debes responder a este chat con el siguiente texto exacto: ok ${verificationId})`;
         const encodedMessage = encodeURIComponent(message);
         const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
 
@@ -79,8 +79,8 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
         setIsTransferDialogOpen(false);
         
         toast({
-            title: "¡Todo listo para enviar!",
-            description: "Se abrirá WhatsApp para que envíes tu comprobante y ID de verificación. Una vez aprobado, tus monedas serán añadidas.",
+            title: "¡Acción Requerida!",
+            description: "Se abrirá WhatsApp para enviar tu ID. Informa al administrador que, para aprobar la compra, debe responder con el texto 'ok' seguido por tu ID de verificación.",
         });
     } catch (error) {
         console.error("Error creating verification:", error);
@@ -179,7 +179,7 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
                                     </SelectContent>
                                 </Select>
                             </div>
-                             <p className="text-slate-300 text-sm">3. Envía tu comprobante por WhatsApp para la verificación.</p>
+                             <p className="text-slate-300 text-sm">3. Haz clic abajo para enviar tu comprobante y ID de verificación por WhatsApp. Un administrador deberá aprobarlo para que recibas tus monedas.</p>
                         </div>
                         <DialogFooter>
                             <Button onClick={handleSendWhatsApp} disabled={!selectedPackageId || isLoading} className="w-full bg-green-600 hover:bg-green-500 text-white">
