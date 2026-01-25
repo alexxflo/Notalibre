@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Rocket, Users, Loader2 } from 'lucide-react';
 import GatekeeperModal from '@/components/GatekeeperModal';
@@ -21,8 +21,13 @@ const WELCOME_BONUS = 50;
 
 function MainApp() {
   const [view, setView] = useState<View>('home');
+  const [buildTimestamp, setBuildTimestamp] = useState<string | null>(null);
   const { user } = useUser();
   const firestore = useFirestore();
+
+  useEffect(() => {
+    setBuildTimestamp(new Date().toLocaleString('es-ES'));
+  }, []);
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -121,6 +126,7 @@ function MainApp() {
 
   return (
     <div className="min-h-screen flex flex-col">
+       {buildTimestamp && <p className="text-center text-yellow-400 bg-slate-800 p-1">Prueba de despliegue: {buildTimestamp}</p>}
       <Header coinBalance={coinBalance} setView={setView} />
       <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
         {renderView()}
