@@ -15,14 +15,14 @@ import {
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 
-export const ProcessWhatsappMessageInputSchema = z.object({
+const ProcessWhatsappMessageInputSchema = z.object({
   message: z.string().describe('The incoming message from WhatsApp.'),
 });
 export type ProcessWhatsappMessageInput = z.infer<
   typeof ProcessWhatsappMessageInputSchema
 >;
 
-export const ProcessWhatsappMessageOutputSchema = z.object({
+const ProcessWhatsappMessageOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
