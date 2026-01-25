@@ -95,6 +95,35 @@
         "reward",
         "createdAt"
       ]
+    },
+    "PurchaseVerification": {
+      "title": "PurchaseVerification",
+      "description": "Represents a manual purchase verification request.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who made the purchase."
+        },
+        "packageId": {
+          "type": "string",
+          "description": "The ID of the coin package purchased (e.g., 'basic', 'premium')."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the verification (e.g., 'pending', 'completed', 'rejected')."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the verification request was created."
+        }
+      },
+      "required": [
+        "userId",
+        "packageId",
+        "status",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -120,6 +149,12 @@
         "$ref": "#/entities/Campaign"
       },
       "description": "Stores individual, single-claim campaigns created by users. Each document represents one potential follow."
+    },
+    "/purchase_verifications/{verificationId}": {
+      "schema": {
+        "$ref": "#/entities/PurchaseVerification"
+      },
+      "description": "Stores manual purchase verification requests. Only administrators should have write access to change the status."
     }
   }
 }
