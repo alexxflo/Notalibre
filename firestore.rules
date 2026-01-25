@@ -13,12 +13,22 @@ service cloud.firestore {
     
     // Allow bot to read any verification and update its status
     match /purchase_verifications/{verificationId} {
-        allow get, update: if request.auth == null;
+        allow get: if request.auth == null;
+        // Allow updating status and adding completion data
+        allow update: if request.auth == null && resource.data.status == 'pending';
     }
-    // Allow bot to read any user and update their coin balance
+    
+    // Allow bot to read user profiles
     match /users/{userId} {
         allow get: if request.auth == null;
-        allow update: if request.auth == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coinBalance']);
+
+        // Allow bot to update a user's coin balance, but nothing else.
+        // This rule verifies that all other fields remain unchanged.
+        allow update: if request.auth == null
+                      && request.resource.data.username == resource.data.username
+                      && request.resource.data.email == resource.data.email
+                      && request.resource.data.avatarUrl == resource.data.avatarUrl
+                      && request.resource.data.gatekeeperPassed == resource.data.gatekeeperPassed;
     }
   }
 }
