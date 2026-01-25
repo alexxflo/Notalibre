@@ -10,9 +10,8 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHea
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUser, useFirestore } from '@/firebase';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { WhatsAppIcon } from './icons';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
 
 const coinPackages = [
   { coins: 40, price: 20, id: 'basic' },
@@ -45,7 +44,7 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
     });
   };
 
-  const handleSendWhatsApp = () => {
+  const handleSendWhatsApp = async () => {
     if (!selectedPackageId || !user) {
         toast({
             variant: "destructive",
@@ -57,28 +56,43 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
 
     const selectedPkg = coinPackages.find(p => p.id === selectedPackageId);
     if (!selectedPkg) return;
-
-    // Create a record in Firestore for verification
-    const verificationsCollection = collection(firestore, 'purchase_verifications');
-    addDocumentNonBlocking(verificationsCollection, {
-        userId: user.uid,
-        packageId: selectedPackageId,
-        status: 'pending',
-        createdAt: serverTimestamp()
-    });
-
-    const message = `Hola, he realizado una transferencia para el paquete de ${selectedPkg.coins} monedas por $${selectedPkg.price} MXN. Mi ID de usuario es: ${user.uid}. Adjunto mi comprobante. ¡Gracias!`;
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-
-    window.open(whatsappUrl, '_blank');
-    setIsTransferDialogOpen(false);
     
-    toast({
-        title: "¡Todo listo para enviar!",
-        description: "Se abrirá WhatsApp para que envíes tu comprobante. Una vez verificado, tus monedas serán añadidas.",
-    });
-};
+    setIsLoading(true);
+
+    const verificationsCollection = collection(firestore, 'purchase_verifications');
+    
+    try {
+        const newDocRef = await addDoc(verificationsCollection, {
+            userId: user.uid,
+            packageId: selectedPackageId,
+            status: 'pending',
+            createdAt: serverTimestamp()
+        });
+
+        const verificationId = newDocRef.id;
+
+        const message = `Hola, he realizado una transferencia para el paquete de ${selectedPkg.coins} monedas por $${selectedPkg.price} MXN. Mi ID de verificación es: ${verificationId}. Adjunto mi comprobante. ¡Gracias! (Para el admin: responder 'ok ${verificationId}' para aprobar)`;
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+
+        window.open(whatsappUrl, '_blank');
+        setIsTransferDialogOpen(false);
+        
+        toast({
+            title: "¡Todo listo para enviar!",
+            description: "Se abrirá WhatsApp para que envíes tu comprobante y ID de verificación. Una vez aprobado, tus monedas serán añadidas.",
+        });
+    } catch (error) {
+        console.error("Error creating verification:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "No se pudo crear la solicitud de verificación. Inténtalo de nuevo."
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
 
   return (
@@ -168,8 +182,8 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
                              <p className="text-slate-300 text-sm">3. Envía tu comprobante por WhatsApp para la verificación.</p>
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleSendWhatsApp} disabled={!selectedPackageId} className="w-full bg-green-600 hover:bg-green-500 text-white">
-                                <WhatsAppIcon className="mr-2 h-5 w-5"/>
+                            <Button onClick={handleSendWhatsApp} disabled={!selectedPackageId || isLoading} className="w-full bg-green-600 hover:bg-green-500 text-white">
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <WhatsAppIcon className="mr-2 h-5 w-5"/>}
                                 Verificar por WhatsApp
                             </Button>
                         </DialogFooter>
