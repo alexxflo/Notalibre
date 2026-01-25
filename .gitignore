@@ -24,12 +24,16 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# local env files
+# dotenv
 .env*.local
+.env
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
+next-env.d.ts
+
+# genkit
+.genkit/
