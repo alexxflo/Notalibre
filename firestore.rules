@@ -1,34 +1,51 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // --- User-specific rules ---
+    match /users/{userId} {
+      // A user can read and write to their own profile
+      allow read, write: if request.auth.uid == userId;
+
+      // The unauthenticated bot can read any user profile for processing
+      allow get: if request.auth == null;
+      
+      // The unauthenticated bot can update a user's coin balance, but nothing else.
+      allow update: if request.auth == null
+                    && request.resource.data.username == resource.data.username
+                    && request.resource.data.email == resource.data.email
+                    && request.resource.data.avatarUrl == resource.data.avatarUrl
+                    && request.resource.data.gatekeeperPassed == resource.data.gatekeeperPassed;
+    }
     
-    // Default rule: Logged-in users can read/write.
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // --- Campaign Rules ---
+    match /campaigns/{campaignId} {
+        // Any logged-in user can read campaigns
+        allow read: if request.auth != null;
+        // A user can create a campaign for themselves
+        allow create: if request.auth.uid == request.resource.data.userId;
+        // A user can delete their own campaign
+        allow delete: if request.auth.uid == resource.data.userId;
     }
 
-    // --- Bot Access (Unauthenticated) ---
-    // WARNING: This allows any server process that can reach Firestore to perform these actions.
-    // It is critical that your webhook endpoint is secured.
-    
-    // Allow bot to read any verification and update its status
+    // --- Purchase Verification Rules ---
     match /purchase_verifications/{verificationId} {
+        // Authenticated users can create their own verification requests
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        
+        // The unauthenticated bot can read any verification
         allow get: if request.auth == null;
-        // Allow updating status and adding completion data
+        
+        // The unauthenticated bot can update the status of a pending verification
         allow update: if request.auth == null && resource.data.status == 'pending';
     }
-    
-    // Allow bot to read user profiles
-    match /users/{userId} {
-        allow get: if request.auth == null;
 
-        // Allow bot to update a user's coin balance, but nothing else.
-        // This rule verifies that all other fields remain unchanged.
-        allow update: if request.auth == null
-                      && request.resource.data.username == resource.data.username
-                      && request.resource.data.email == resource.data.email
-                      && request.resource.data.avatarUrl == resource.data.avatarUrl
-                      && request.resource.data.gatekeeperPassed == resource.data.gatekeeperPassed;
+    // --- Stats Rules ---
+    match /stats/{statId} {
+      // Any authenticated user can read stats
+      allow read: if request.auth != null;
+      // Allow the client to increment the user count upon sign-up
+      allow write: if request.auth != null;
     }
   }
 }
