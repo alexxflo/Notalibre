@@ -21,13 +21,8 @@ const WELCOME_BONUS = 50;
 
 function MainApp() {
   const [view, setView] = useState<View>('home');
-  const [buildTimestamp, setBuildTimestamp] = useState<string | null>(null);
   const { user } = useUser();
   const firestore = useFirestore();
-
-  useEffect(() => {
-    setBuildTimestamp(new Date().toLocaleString('es-ES'));
-  }, []);
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -97,7 +92,7 @@ function MainApp() {
       default:
         return (
           <div className="text-center">
-            <h2 className="text-3xl md:text-5xl font-bold font-headline mb-4 uppercase tracking-wider text-white">Domina el Algoritmo</h2>
+            <h2 className="text-3xl md:text-5xl font-bold font-headline mb-4 uppercase tracking-wider text-white">¡ACTUALIZACIÓN EXITOSA!</h2>
             <p className="text-slate-400 mb-8 md:mb-12 text-lg max-w-2xl mx-auto">Elige una opción para empezar a interactuar con la comunidad y hacer crecer tu perfil.</p>
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               <div 
@@ -126,7 +121,6 @@ function MainApp() {
 
   return (
     <div className="min-h-screen flex flex-col">
-       {buildTimestamp && <p className="text-center text-yellow-400 bg-slate-800 p-1">Prueba de despliegue: {buildTimestamp}</p>}
       <Header coinBalance={coinBalance} setView={setView} />
       <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
         {renderView()}
