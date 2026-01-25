@@ -6,7 +6,7 @@
  *   updates a purchase verification and credits coins to a user.
  */
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit/zod';
+import { z } from 'zod';
 import {
   doc,
   getDoc,
