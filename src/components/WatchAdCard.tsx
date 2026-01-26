@@ -18,6 +18,7 @@ const AD_REWARD = 2;
 declare global {
   interface Window {
     adsbygoogle: any;
+    rewardedAdInitialized?: boolean;
   }
 }
 // --- FIN DE LA ESTRUCTURA ---
@@ -40,6 +41,13 @@ export default function WatchAdCard({ updateCoinBalance, coinBalance }: WatchAdC
     
     // Esta función prepara el anuncio bonificado.
     const setupRewardedAd = () => {
+        // Solo inicializar si no se ha hecho antes para evitar errores.
+        if (window.rewardedAdInitialized) {
+            setStatus('ready');
+            return;
+        }
+        window.rewardedAdInitialized = true;
+
         console.log('Setting up AdSense Rewarded Ad...');
         setStatus('loading');
 
@@ -50,8 +58,9 @@ export default function WatchAdCard({ updateCoinBalance, coinBalance }: WatchAdC
                 // Si el anuncio fue cerrado sin que el usuario lo viera completo, 'ad.isRewarded' será falso.
                 if (ad && ad.isRewarded === false) {
                     console.log("User closed ad without finishing.");
-                    setStatus('ready'); // El anuncio está listo para ser visto de nuevo.
                 }
+                // El anuncio está listo para ser visto de nuevo.
+                setStatus('ready'); 
             },
             // ¡Esta es la función más importante! Se ejecuta cuando el usuario ha visto el anuncio completo.
             onRewarded: (reward) => {
@@ -66,7 +75,7 @@ export default function WatchAdCard({ updateCoinBalance, coinBalance }: WatchAdC
 
     setupRewardedAd();
 
-  }, []); // El array vacío asegura que esto solo se ejecute una vez.
+  }, []); // El array vacío asegura que esto solo se ejecute una vez por montaje del componente.
 
   const handleShowAd = () => {
     // Esta función se debe llamar para mostrar el anuncio.
@@ -82,10 +91,8 @@ export default function WatchAdCard({ updateCoinBalance, coinBalance }: WatchAdC
       title: "¡Recompensa Obtenida!",
       description: `Has ganado ${AD_REWARD} monedas.`,
     });
-    // Reseteamos el estado para que se pueda volver a configurar un nuevo anuncio.
-    setStatus('idle'); 
-    // Idealmente, aquí deberías volver a llamar a setupRewardedAd() para precargar el siguiente anuncio.
-    // Por simplicidad, un refresh de página funcionaría, o puedes re-llamar la configuración.
+    // Reseteamos el estado para que se pueda ver otro anuncio.
+    setStatus('ready'); 
   };
   
   const getButton = () => {
