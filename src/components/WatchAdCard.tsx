@@ -33,57 +33,31 @@ export default function WatchAdCard({ updateCoinBalance, coinBalance }: WatchAdC
     // Cuando el componente se monta, intentamos cargar la API de anuncios de Google.
     try {
       window.adsbygoogle = window.adsbygoogle || [];
+      setStatus('ready'); // Asumimos que está listo; el script de Google gestionará la carga.
     } catch (e) {
       console.error("AdSense script not loaded yet.", e);
       setStatus('idle'); // Falla si el script de AdSense no cargó.
-      return;
     }
-    
-    // Esta función prepara el anuncio bonificado.
-    const setupRewardedAd = () => {
-        // Usamos una bandera global en el objeto `window` para asegurarnos
-        // de que este bloque de configuración se ejecute una sola vez en toda la aplicación.
-        // Esto evita errores en React (Strict Mode) y en la navegación de una sola página.
-        if (window.rewardedAdInitialized) {
-            setStatus('ready');
-            return;
-        }
-        window.rewardedAdInitialized = true;
-
-        console.log('Setting up AdSense Rewarded Ad...');
-        setStatus('loading');
-
-        window.adsbygoogle.push({
-            key: "YOUR_AD_SLOT_ID", // TU CÓDIGO AQUÍ: Reemplaza esto con tu ID de bloque de anuncios de AdSense.
-            // Esta función se ejecuta cuando el usuario cierra el anuncio.
-            onClosed: (ad) => {
-                // Si el anuncio fue cerrado sin que el usuario lo viera completo, 'ad.isRewarded' será falso.
-                if (ad && ad.isRewarded === false) {
-                    console.log("User closed ad without finishing.");
-                }
-                // El anuncio está listo para ser visto de nuevo.
-                setStatus('ready'); 
-            },
-            // ¡Esta es la función más importante! Se ejecuta cuando el usuario ha visto el anuncio completo.
-            onRewarded: (reward) => {
-                console.log(`Reward earned:`, reward);
-                // El usuario ha ganado la recompensa, habilitamos el botón de reclamar.
-                setStatus('claimable');
-            },
-        });
-        // Una vez configurado, el anuncio está listo para ser mostrado.
-        setStatus('ready'); 
-    };
-
-    setupRewardedAd();
-
-  }, []); // El array vacío asegura que esto solo se ejecute una vez por montaje del componente.
+  }, []);
 
   const handleShowAd = () => {
+    setStatus('loading');
     // Esta función se debe llamar para mostrar el anuncio.
-    // Debes integrarla en tu lógica para que el usuario pueda activarla.
+    // La API de AdSense se encarga de todo a partir de este push.
      window.adsbygoogle.push({
         key: "YOUR_AD_SLOT_ID", // TU CÓDIGO AQUÍ: Usa el mismo ID de bloque de anuncios.
+        onClosed: (ad) => {
+            if (ad && ad.isRewarded === false) {
+                console.log("User closed ad without finishing.");
+            }
+            // El anuncio está listo para ser visto de nuevo.
+            setStatus('ready'); 
+        },
+        onRewarded: (reward) => {
+            console.log(`Reward earned:`, reward);
+            // El usuario ha ganado la recompensa, habilitamos el botón de reclamar.
+            setStatus('claimable');
+        },
     });
   };
 
