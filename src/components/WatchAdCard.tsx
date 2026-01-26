@@ -41,7 +41,9 @@ export default function WatchAdCard({ updateCoinBalance, coinBalance }: WatchAdC
     
     // Esta función prepara el anuncio bonificado.
     const setupRewardedAd = () => {
-        // Solo inicializar si no se ha hecho antes para evitar errores.
+        // Usamos una bandera global en el objeto `window` para asegurarnos
+        // de que este bloque de configuración se ejecute una sola vez en toda la aplicación.
+        // Esto evita errores en React (Strict Mode) y en la navegación de una sola página.
         if (window.rewardedAdInitialized) {
             setStatus('ready');
             return;
