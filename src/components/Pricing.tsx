@@ -13,17 +13,23 @@ import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
 import MercadoPagoButton from './MercadoPagoButton';
 
 const coinPackages = [
-  { coins: 40, price: 20, id: 'basic' },
-  { coins: 80, price: 35, id: 'standard' },
+  { coins: 40, price: 20, id: 'basic', preferenceId: "180960088-31ed752e-5ed0-4cb3-a4ee-4fe97ca3198b" },
+  { coins: 80, price: 35, id: 'standard', preferenceId: "180960088-469aead4-c622-4d2e-be11-b524517fe4b2" },
   { coins: 120, price: 50, id: 'premium' },
   { coins: 300, price: 100, id: 'pro', popular: true },
 ];
 
-type CoinPackage = typeof coinPackages[0];
+// Define the type with an optional preferenceId
+type CoinPackage = {
+    coins: number;
+    price: number;
+    id: string;
+    preferenceId?: string;
+    popular?: boolean;
+};
 
 const bankAccount = '638180000106470075';
 const whatsappNumber = '525658925846';
-const mercadoPagoPreferenceId = "180960088-31ed752e-5ed0-4cb3-a4ee-4fe97ca3198b";
 
 type PricingProps = {
     coinBalance: number;
@@ -114,7 +120,7 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
           <p className="text-slate-400 mt-2 text-lg">Compra monedas para aumentar tu visibilidad y conseguir más seguidores.</p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-          {coinPackages.map((pkg) => (
+          {coinPackages.map((pkg: CoinPackage) => (
             <Card key={pkg.id} className={`flex flex-col bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl transition-all ${pkg.popular ? 'border-cyan-500 shadow-lg shadow-cyan-500/20 relative' : 'shadow-md'}`}>
               {pkg.popular && (
                   <div className="absolute -top-4 right-4 bg-cyan-500 text-black px-3 py-1 text-sm font-bold rounded-full flex items-center gap-1 shadow-md">
@@ -159,10 +165,10 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
-                           {selectedPackage?.id === 'basic' ? (
+                           {selectedPackage?.preferenceId ? (
                                 <>
                                     <p className="text-slate-300 text-sm">1. Paga ${selectedPackage.price} MXN con Mercado Pago usando el siguiente botón.</p>
-                                    <MercadoPagoButton preferenceId={mercadoPagoPreferenceId} />
+                                    <MercadoPagoButton preferenceId={selectedPackage.preferenceId} />
                                     <p className="text-slate-300 text-sm">2. Una vez completado el pago, haz clic abajo para notificarnos por WhatsApp y recibir tus monedas.</p>
                                 </>
                            ) : (
