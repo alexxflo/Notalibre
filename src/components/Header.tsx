@@ -14,9 +14,8 @@ type HeaderProps = {
 };
 
 function UserCounter() {
-  // IMPORTANT: Replace with your actual Firebase User ID to see this counter.
-  // You can find your UID in the Firebase console under Authentication.
-  const ADMIN_UID = 'YOUR_ADMIN_UID_HERE';
+  // IMPORTANT: This counter is now only visible to the admin user.
+  const ADMIN_UID = 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
   const { user } = useUser(); // Get the current user
   const firestore = useFirestore();
   const statsRef = useMemoFirebase(() => doc(firestore, 'stats', 'users'), [firestore]);
