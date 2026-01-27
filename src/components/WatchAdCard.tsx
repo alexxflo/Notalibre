@@ -34,7 +34,7 @@ export default function WatchAdCard({ updateCoinBalance, coinBalance }: WatchAdC
 
   const handleShowAd = () => {
     // Abrimos el enlace que nos proporcionaste en una nueva pestaña.
-    window.open('https://pubads.g.doubleclick.net/gampad/clk?id=2356885303&iu=/22956962386/rewarded_web_2', '_blank');
+    window.open('https://www.effectivegatecpm.com/j6j14xfcnk?key=b315e748149774eb874abc959aa9bf68', '_blank');
     // Iniciamos el proceso de verificación.
     setStatus('pending');
   };
