@@ -14,9 +14,9 @@ import MercadoPagoButton from './MercadoPagoButton';
 
 const coinPackages = [
   { coins: 40, price: 20, id: 'basic', preferenceId: "180960088-31ed752e-5ed0-4cb3-a4ee-4fe97ca3198b" },
-  { coins: 80, price: 35, id: 'standard', preferenceId: "180960088-469aead4-c622-4d2e-be11-b524517fe4b2" },
+  { coins: 80, price: 35, id: 'standard', popular: true, preferenceId: "180960088-469aead4-c622-4d2e-be11-b524517fe4b2" },
   { coins: 120, price: 50, id: 'premium', preferenceId: "180960088-61cfc8e2-8739-4d85-9828-cb3cbb18e112" },
-  { coins: 300, price: 100, id: 'pro', popular: true, preferenceId: "180960088-6f60a895-9eb0-46a3-b80e-372274a81a7c" },
+  { coins: 300, price: 100, id: 'pro', preferenceId: "180960088-6f60a895-9eb0-46a3-b80e-372274a81a7c" },
 ];
 
 // Define the type with an optional preferenceId
