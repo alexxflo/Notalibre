@@ -23,18 +23,6 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Poppins:wght@400;600;700&family=PT+Sans:wght@400;700&display=swap"
           rel="stylesheet"
         />
-        {/* 
-          SCRIPT DE GOOGLE ADSENSE:
-          Una vez que tengas tu ID de publicador de AdSense, reemplaza 
-          'ca-pub-XXXXXXXXXXXXXXXX' con tu ID real.
-          Este script carga la librería de anuncios de Google en tu aplicación.
-        */}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>

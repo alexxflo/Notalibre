@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Loader2, Tv2 } from 'lucide-react';
+import { CheckCircle, Clock, Tv2 } from 'lucide-react';
 
 type WatchAdCardProps = {
   updateCoinBalance: (newBalance: number) => void;
@@ -12,53 +12,31 @@ type WatchAdCardProps = {
 };
 
 const AD_REWARD = 2;
-
-// --- ESTRUCTURA PARA ANUNCIOS BONIFICADOS DE GOOGLE ADSENSE ---
-// Declara un objeto global para la API de anuncios. Google lo necesita.
-declare global {
-  interface Window {
-    adsbygoogle: any;
-    rewardedAdInitialized?: boolean;
-  }
-}
-// --- FIN DE LA ESTRUCTURA ---
-
+const AD_VIEW_SECONDS = 15;
 
 export default function WatchAdCard({ updateCoinBalance, coinBalance }: WatchAdCardProps) {
   const { toast } = useToast();
-  const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'claimable'>('idle');
+  const [status, setStatus] = useState<'idle' | 'pending' | 'claimable'>('idle');
+  const [countdown, setCountdown] = useState(AD_VIEW_SECONDS);
 
-  // --- LÓGICA DE ANUNCIOS REALES ---
   useEffect(() => {
-    // Cuando el componente se monta, intentamos cargar la API de anuncios de Google.
-    try {
-      window.adsbygoogle = window.adsbygoogle || [];
-      setStatus('ready'); // Asumimos que está listo; el script de Google gestionará la carga.
-    } catch (e) {
-      console.error("AdSense script not loaded yet.", e);
-      setStatus('idle'); // Falla si el script de AdSense no cargó.
+    let timer: NodeJS.Timeout;
+    if (status === 'pending' && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (countdown === 0 && status === 'pending') {
+      setStatus('claimable');
+      clearInterval(timer);
     }
-  }, []);
+    return () => clearInterval(timer);
+  }, [status, countdown]);
 
   const handleShowAd = () => {
-    setStatus('loading');
-    // Esta función se debe llamar para mostrar el anuncio.
-    // La API de AdSense se encarga de todo a partir de este push.
-     window.adsbygoogle.push({
-        key: "YOUR_AD_SLOT_ID", // TU CÓDIGO AQUÍ: Usa el mismo ID de bloque de anuncios.
-        onClosed: (ad) => {
-            if (ad && ad.isRewarded === false) {
-                console.log("User closed ad without finishing.");
-            }
-            // El anuncio está listo para ser visto de nuevo.
-            setStatus('ready'); 
-        },
-        onRewarded: (reward) => {
-            console.log(`Reward earned:`, reward);
-            // El usuario ha ganado la recompensa, habilitamos el botón de reclamar.
-            setStatus('claimable');
-        },
-    });
+    // Abrimos el enlace que nos proporcionaste en una nueva pestaña.
+    window.open('https://pubads.g.doubleclick.net/gampad/clk?id=2356885303&iu=/22956962386/rewarded_web_2', '_blank');
+    // Iniciamos el proceso de verificación.
+    setStatus('pending');
   };
 
   const handleClaim = () => {
@@ -68,15 +46,24 @@ export default function WatchAdCard({ updateCoinBalance, coinBalance }: WatchAdC
       description: `Has ganado ${AD_REWARD} monedas.`,
     });
     // Reseteamos el estado para que se pueda ver otro anuncio.
-    setStatus('ready'); 
+    setStatus('idle');
+    setCountdown(AD_VIEW_SECONDS);
   };
   
   const getButton = () => {
     switch (status) {
-      case 'loading':
-         return <Button disabled className="w-full md:w-auto uppercase"><Loader2 className="mr-2 animate-spin" /> Cargando Anuncio...</Button>;
-      case 'ready':
-        return <Button onClick={handleShowAd} className="bg-cyan-500 text-black hover:bg-cyan-400 font-bold uppercase w-full md:w-auto">Ver Anuncio (+{AD_REWARD} Monedas)</Button>;
+      case 'pending':
+        return (
+          <div className="w-full flex flex-col items-center gap-2">
+            <div className="w-full bg-slate-700 rounded-full h-2.5">
+                <div className="bg-cyan-400 h-2.5 rounded-full" style={{ width: `${(AD_VIEW_SECONDS - countdown) / AD_VIEW_SECONDS * 100}%`, transition: 'width 1s linear' }}></div>
+            </div>
+            <Button disabled className="w-full md:w-auto uppercase">
+                <Clock className="mr-2" />
+                Verificando... ({countdown}s)
+            </Button>
+          </div>
+        );
       case 'claimable':
         return (
             <Button onClick={handleClaim} className="bg-green-500 text-black hover:bg-green-400 font-bold uppercase w-full md:w-auto shadow-[0_0_15px_rgba(74,222,128,0.5)]">
@@ -86,7 +73,7 @@ export default function WatchAdCard({ updateCoinBalance, coinBalance }: WatchAdC
         );
       case 'idle':
       default:
-        return <Button disabled className="w-full md:w-auto uppercase">Anuncios no disponibles</Button>;
+        return <Button onClick={handleShowAd} className="bg-cyan-500 text-black hover:bg-cyan-400 font-bold uppercase w-full md:w-auto">Ver Anuncio (+{AD_REWARD} Monedas)</Button>;
     }
   };
 
