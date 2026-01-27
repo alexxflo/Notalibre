@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Clock } from 'lucide-react';
+import { CheckCircle, Clock, Users } from 'lucide-react';
 import { Campaign } from '@/types';
 import { useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -14,16 +14,18 @@ import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type CampaignCardProps = {
   campaign: Campaign;
+  availableFollows: number;
+  campaignIds: string[];
   coinBalance: number;
   updateCoinBalance: (newBalance: number) => void;
 };
 
 const COUNTDOWN_SECONDS = 20;
 
-export default function CampaignCard({ campaign, coinBalance, updateCoinBalance }: CampaignCardProps) {
+export default function CampaignCard({ campaign, availableFollows, campaignIds, coinBalance, updateCoinBalance }: CampaignCardProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const [status, setStatus] = useState<'idle' | 'pending' | 'claimable'>('idle');
+  const [status, setStatus] = useState<'idle' | 'pending' | 'claimable' | 'claimed'>('idle');
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
 
   useEffect(() => {
@@ -45,8 +47,15 @@ export default function CampaignCard({ campaign, coinBalance, updateCoinBalance 
   };
 
   const handleClaim = () => {
+    if (status !== 'claimable') return; // Prevent double claims
+
+    setStatus('claimed');
     updateCoinBalance(coinBalance + campaign.reward);
-    const campaignDocRef = doc(firestore, 'campaigns', campaign.id);
+
+    const campaignIdToDelete = campaignIds[0];
+    if (!campaignIdToDelete) return;
+
+    const campaignDocRef = doc(firestore, 'campaigns', campaignIdToDelete);
     deleteDocumentNonBlocking(campaignDocRef);
 
     toast({
@@ -78,12 +87,19 @@ export default function CampaignCard({ campaign, coinBalance, updateCoinBalance 
                 Reclamar Recompensa
             </Button>
         );
+      case 'claimed':
+        return (
+            <Button disabled className="w-full md:w-auto uppercase bg-green-700 text-white cursor-not-allowed">
+                <CheckCircle className="mr-2" />
+                ¡Reclamado!
+            </Button>
+        );
     }
   };
 
   return (
     <Card className="p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-2xl">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-1">
         <Image
           src={campaign.avatarUrl}
           alt={campaign.username}
@@ -97,8 +113,17 @@ export default function CampaignCard({ campaign, coinBalance, updateCoinBalance 
             <p className="text-sm text-cyan-400 font-semibold">{campaign.socialNetwork}</p>
         </div>
       </div>
-      <div className="w-full md:w-auto md:min-w-[240px]">
-        {getButton()}
+      <div className="flex items-center gap-6">
+        <div className="text-center">
+            <div className="flex items-center justify-center gap-2 text-slate-300">
+                <Users className="h-5 w-5" />
+                <span className="font-bold text-xl text-white">{availableFollows}</span>
+            </div>
+            <p className="text-xs text-slate-500 font-semibold">disponibles</p>
+        </div>
+        <div className="w-full md:w-auto md:min-w-[240px]">
+            {getButton()}
+        </div>
       </div>
     </Card>
   );

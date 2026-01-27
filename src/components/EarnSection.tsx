@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from 'react';
 import CampaignCard from './CampaignCard';
 import WatchAdCard from './WatchAdCard';
 import { Users, Loader2 } from 'lucide-react';
@@ -12,24 +13,53 @@ type EarnSectionProps = {
   updateCoinBalance: (newBalance: number) => void;
 };
 
+// Define a type for the grouped campaign structure
+type GroupedCampaign = {
+    campaign: Campaign;
+    count: number;
+    ids: string[];
+}
+
 export default function EarnSection({ coinBalance, updateCoinBalance }: EarnSectionProps) {
   const { user } = useUser();
   const firestore = useFirestore();
 
   const campaignsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    // Removed orderBy to simplify the query and diagnose a potential
-    // permissions/indexing issue.
+    // Increased limit to fetch more for grouping
     return query(
         collection(firestore, 'campaigns'),
-        limit(50)
+        limit(200)
     );
   }, [firestore, user]);
 
   const { data: campaigns, isLoading } = useCollection<Campaign>(campaignsQuery);
   
-  // Filter out the current user's own campaigns on the client-side.
-  const otherUserCampaigns = campaigns?.filter(campaign => campaign.userId !== user?.uid);
+  const groupedCampaigns = useMemo((): GroupedCampaign[] => {
+    if (!campaigns || !user) return [];
+
+    const otherUserCampaigns = campaigns.filter(campaign => campaign.userId !== user.uid);
+
+    const campaignGroups: Record<string, { campaign: Campaign; count: number; ids: string[] }> = {};
+
+    for (const campaign of otherUserCampaigns) {
+        // Group by a unique identifier for the campaign, the profile URL is good
+        const key = campaign.url;
+        if (!campaignGroups[key]) {
+            campaignGroups[key] = {
+                campaign: campaign, // Use the first one as a template
+                count: 0,
+                ids: []
+            };
+        }
+        campaignGroups[key].count += 1;
+        campaignGroups[key].ids.push(campaign.id);
+    }
+    
+    // Convert the object back to an array
+    return Object.values(campaignGroups);
+  }, [campaigns, user]);
+
 
   return (
     <div className="w-full max-w-4xl flex flex-col gap-6 p-2 md:p-6 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-cyan-500/20">
@@ -56,11 +86,13 @@ export default function EarnSection({ coinBalance, updateCoinBalance }: EarnSect
                 <Loader2 className="h-12 w-12 animate-spin text-cyan-400" />
               </div>
             )}
-            {!isLoading && otherUserCampaigns && otherUserCampaigns.length > 0 ? (
-                otherUserCampaigns.map(campaign => (
+            {!isLoading && groupedCampaigns && groupedCampaigns.length > 0 ? (
+                groupedCampaigns.map(({ campaign, count, ids }) => (
                     <CampaignCard 
-                        key={campaign.id} 
+                        key={campaign.url} 
                         campaign={campaign} 
+                        availableFollows={count}
+                        campaignIds={ids}
                         coinBalance={coinBalance} 
                         updateCoinBalance={updateCoinBalance}
                     />
