@@ -3,15 +3,14 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
 import { Gem, Copy, Star, Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useUser, useFirestore } from '@/firebase';
 import { WhatsAppIcon } from './icons';
 import { collection, serverTimestamp, addDoc } from 'firebase/firestore';
+import MercadoPagoButton from './MercadoPagoButton';
 
 const coinPackages = [
   { coins: 40, price: 20, id: 'basic' },
@@ -20,8 +19,11 @@ const coinPackages = [
   { coins: 300, price: 100, id: 'pro', popular: true },
 ];
 
+type CoinPackage = typeof coinPackages[0];
+
 const bankAccount = '638180000106470075';
 const whatsappNumber = '525658925846';
+const mercadoPagoPreferenceId = "180960088-31ed752e-5ed0-4cb3-a4ee-4fe97ca3198b";
 
 type PricingProps = {
     coinBalance: number;
@@ -34,7 +36,7 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
   const firestore = useFirestore();
   const [isLoading, setIsLoading] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
-  const [selectedPackageId, setSelectedPackageId] = useState<string | undefined>(undefined);
+  const [selectedPackage, setSelectedPackage] = useState<CoinPackage | null>(null);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(bankAccount);
@@ -45,17 +47,14 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
   };
 
   const handleSendWhatsApp = async () => {
-    if (!selectedPackageId || !user) {
+    if (!selectedPackage || !user) {
         toast({
             variant: "destructive",
             title: "Faltan datos",
-            description: "Por favor, selecciona el paquete que pagaste.",
+            description: "Ocurrió un error. Por favor, cierra la ventana y vuelve a intentarlo.",
         });
         return;
     }
-
-    const selectedPkg = coinPackages.find(p => p.id === selectedPackageId);
-    if (!selectedPkg) return;
     
     setIsLoading(true);
 
@@ -64,14 +63,14 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
     try {
         const newDocRef = await addDoc(verificationsCollection, {
             userId: user.uid,
-            packageId: selectedPackageId,
+            packageId: selectedPackage.id,
             status: 'pending',
             createdAt: serverTimestamp()
         });
 
         const verificationId = newDocRef.id;
 
-        const message = `Hola, he realizado una transferencia para el paquete de ${selectedPkg.coins} monedas por $${selectedPkg.price} MXN. Mi ID de verificación es: ${verificationId}. Adjunto mi comprobante. ¡Gracias! (IMPORTANTE para el ADMIN: Para aprobar esta compra, debes responder a este chat con el siguiente texto exacto: ok ${verificationId})`;
+        const message = `Hola, he realizado un pago para el paquete de ${selectedPackage.coins} monedas por $${selectedPackage.price} MXN. Mi ID de verificación es: ${verificationId}. Adjunto mi comprobante. ¡Gracias! (IMPORTANTE para el ADMIN: Para aprobar esta compra, debes responder a este chat con el siguiente texto exacto: ok ${verificationId})`;
         const encodedMessage = encodeURIComponent(message);
         const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
 
@@ -132,21 +131,26 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
                 <p className="text-4xl font-bold text-white">${pkg.price}<span className="text-lg font-medium text-slate-400"> MXN</span></p>
               </CardContent>
               <CardFooter>
-                  <Button onClick={() => setIsTransferDialogOpen(true)} className="w-full font-headline uppercase h-12 text-lg" variant={pkg.popular ? 'default' : 'secondary'}>Comprar Ahora</Button>
+                  <Button onClick={() => {
+                      setSelectedPackage(pkg);
+                      setIsTransferDialogOpen(true);
+                  }} className="w-full font-headline uppercase h-12 text-lg" variant={pkg.popular ? 'default' : 'secondary'}>Comprar Ahora</Button>
               </CardFooter>
             </Card>
           ))}
         </div>
         <Card className="mt-16 text-center shadow-lg bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl">
             <CardHeader>
-                <CardTitle className="font-headline text-2xl text-white">Método de Pago</CardTitle>
-                <CardDescription className="text-slate-400">Actualmente solo aceptamos transferencias bancarias. Sigue los pasos para recargar.</CardDescription>
+                <CardTitle className="font-headline text-2xl text-white">Métodos de Pago</CardTitle>
+                <CardDescription className="text-slate-400">Paga con Mercado Pago o transferencia bancaria. Sigue los pasos para recargar.</CardDescription>
             </CardHeader>
-            <CardContent>
-                <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" className="w-full max-w-sm">Verificar Pago por Transferencia</Button>
-                    </DialogTrigger>
+             <CardContent>
+                <Dialog open={isTransferDialogOpen} onOpenChange={(isOpen) => {
+                    setIsTransferDialogOpen(isOpen);
+                    if (!isOpen) {
+                        setSelectedPackage(null); // Reset on close
+                    }
+                }}>
                     <DialogContent className="bg-slate-900 border-magenta-500/50">
                         <DialogHeader>
                             <DialogTitle className="text-magenta-400">Verificación de Pago Manual</DialogTitle>
@@ -155,34 +159,29 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
-                             <div>
-                                <p className="text-slate-300 text-sm">1. Realiza tu depósito a la siguiente cuenta y guarda el comprobante:</p>
-                                <div className="my-2 p-3 bg-slate-800 rounded-md inline-flex items-center gap-4 ring-1 ring-slate-700 w-full">
-                                    <p className="text-lg font-mono tracking-widest text-white flex-grow">{bankAccount}</p>
-                                    <Button variant="ghost" size="icon" onClick={handleCopy} aria-label="Copiar número de cuenta" className="text-slate-400 hover:text-white">
-                                      <Copy className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="package">2. Selecciona el paquete que pagaste</Label>
-                                <Select onValueChange={setSelectedPackageId} value={selectedPackageId}>
-                                    <SelectTrigger className="w-full bg-slate-800 border-slate-700">
-                                        <SelectValue placeholder="Selecciona un paquete" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-slate-900 border-slate-700">
-                                        {coinPackages.map((pkg) => (
-                                            <SelectItem key={pkg.id} value={pkg.id}>
-                                                {pkg.coins} monedas por ${pkg.price} MXN
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                             <p className="text-slate-300 text-sm">3. Haz clic abajo para enviar tu comprobante y ID de verificación por WhatsApp. Un administrador deberá aprobarlo para que recibas tus monedas.</p>
+                           {selectedPackage?.id === 'basic' ? (
+                                <>
+                                    <p className="text-slate-300 text-sm">1. Paga ${selectedPackage.price} MXN con Mercado Pago usando el siguiente botón.</p>
+                                    <MercadoPagoButton preferenceId={mercadoPagoPreferenceId} />
+                                    <p className="text-slate-300 text-sm">2. Una vez completado el pago, haz clic abajo para notificarnos por WhatsApp y recibir tus monedas.</p>
+                                </>
+                           ) : (
+                                selectedPackage && (
+                                    <>
+                                        <p className="text-slate-300 text-sm">1. Realiza tu depósito de ${selectedPackage.price} MXN a la siguiente cuenta y guarda el comprobante:</p>
+                                        <div className="my-2 p-3 bg-slate-800 rounded-md inline-flex items-center gap-4 ring-1 ring-slate-700 w-full">
+                                            <p className="text-lg font-mono tracking-widest text-white flex-grow">{bankAccount}</p>
+                                            <Button variant="ghost" size="icon" onClick={handleCopy} aria-label="Copiar número de cuenta" className="text-slate-400 hover:text-white">
+                                              <Copy className="h-5 w-5" />
+                                            </Button>
+                                        </div>
+                                        <p className="text-slate-300 text-sm">2. Haz clic abajo para enviar tu comprobante y ID de verificación por WhatsApp. Un administrador deberá aprobarlo para que recibas tus monedas.</p>
+                                    </>
+                                )
+                           )}
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleSendWhatsApp} disabled={!selectedPackageId || isLoading} className="w-full bg-green-600 hover:bg-green-500 text-white">
+                            <Button onClick={handleSendWhatsApp} disabled={!selectedPackage || isLoading} className="w-full bg-green-600 hover:bg-green-500 text-white">
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <WhatsAppIcon className="mr-2 h-5 w-5"/>}
                                 Verificar por WhatsApp
                             </Button>
