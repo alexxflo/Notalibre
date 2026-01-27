@@ -24,8 +24,10 @@ service cloud.firestore {
         allow read: if request.auth != null;
         // A user can create a campaign for themselves
         allow create: if request.auth.uid == request.resource.data.userId;
-        // A user can delete their own campaign
-        allow delete: if request.auth.uid == resource.data.userId;
+        // Any authenticated user can delete (claim) a campaign. This allows
+        // the "follow-to-earn" feature to work, as the user who follows
+        // is the one who deletes the campaign document.
+        allow delete: if request.auth != null;
     }
 
     // --- Purchase Verification Rules ---
