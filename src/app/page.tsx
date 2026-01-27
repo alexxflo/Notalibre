@@ -12,9 +12,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Footer from '@/components/Footer';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { updateDocumentNonBlocking } from '@/firebase';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import SignIn from '@/components/auth/SignIn';
 import WatchAdCard from '@/components/WatchAdCard';
+import ActivityFeed from '@/components/ActivityFeed';
 
 export type View = 'home' | 'earn' | 'create' | 'store';
 
@@ -135,6 +136,7 @@ function MainApp() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <ActivityFeed />
       <Header coinBalance={coinBalance} setView={setView} />
       <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
         {renderView()}

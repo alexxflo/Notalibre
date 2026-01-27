@@ -25,7 +25,8 @@ export function Toaster() {
               )}
             </div>
             {action}
-            <ToastClose />
+            {/* Do not show close button on activity feed toasts */}
+            {!props.duration && <ToastClose />}
           </Toast>
         )
       })}
