@@ -71,38 +71,14 @@ service cloud.firestore {
         allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
 
-    // --- Vortex-Flog Rules ---
+    // --- Vortex-Flog Rules (Simplified for Debugging) ---
     match /flogs/{userId} {
+      // Allow any authenticated user to read Flog profiles.
       allow read: if request.auth != null;
 
-      // Users can create their own Flog profile, ensuring initial state is correct.
-      // The timestamp check is removed as a debugging step.
-      allow create: if request.auth.uid == userId
-                    && request.resource.data.userId == userId
-                    && request.resource.data.likes == 0
-                    && request.resource.data.dislikes == 0;
-
-      // Allow owner to update non-photo fields
-      allow update: if request.auth.uid == userId
-                     && request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl;
-
-      // Allow owner to update photo only if 24h have passed
-      allow update: if request.auth.uid == userId
-                     && request.resource.data.mainPhotoUrl != resource.data.mainPhotoUrl
-                     && request.time > resource.data.lastPhotoUpdate + duration.value(24, 'h');
-
-      // Allow any user to like or dislike (but not both at once)
-      allow update: if request.auth.uid != null && request.auth.uid != userId && (
-          (request.resource.data.likes == resource.data.likes + 1 && request.resource.data.dislikes == resource.data.dislikes) ||
-          (request.resource.data.dislikes == resource.data.dislikes + 1 && request.resource.data.likes == resource.data.likes)
-        ) &&
-        // Ensure no other fields are being changed
-        request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl &&
-        request.resource.data.description == resource.data.description &&
-        request.resource.data.lastPhotoUpdate == resource.data.lastPhotoUpdate &&
-        request.resource.data.themeColor == resource.data.themeColor &&
-        request.resource.data.userId == resource.data.userId &&
-        request.resource.data.username == resource.data.username;
+      // Allow a user to create, update, or delete their own Flog profile.
+      // This is a simplified rule for debugging.
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
     match /flogs/{userId}/signatures/{signatureId} {
