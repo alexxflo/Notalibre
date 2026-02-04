@@ -80,13 +80,15 @@ service cloud.firestore {
       // The owner can update any field on their OWN profile
       allow update: if request.auth.uid == userId;
       
-      // Any other authenticated user can update ONLY the likes/dislikes fields
+      // Any other authenticated user can update ONLY the likes/dislikes/followerCount fields
       allow update: if request.auth != null
                     && request.auth.uid != userId
                     && request.resource.data.description == resource.data.description
                     && request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl
                     && request.resource.data.lastPhotoUpdate == resource.data.lastPhotoUpdate
-                    && request.resource.data.themeColor == resource.data.themeColor;
+                    && request.resource.data.themeColor == resource.data.themeColor
+                    && request.resource.data.username == resource.data.username
+                    && request.resource.data.userId == resource.data.userId;
     }
     
     match /flogs/{userId}/signatures/{signatureId} {

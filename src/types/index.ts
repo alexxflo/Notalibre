@@ -20,6 +20,7 @@ export interface UserProfile {
   gatekeeperPassed: boolean;
   isBlocked?: boolean;
   interactedFlogIds?: string[];
+  following?: string[];
 }
 
 export interface DailyStats {
@@ -46,6 +47,7 @@ export interface FlogProfile {
   themeColor: 'cyan' | 'magenta' | 'lime';
   likes: number;
   dislikes: number;
+  followerCount?: number;
 }
 
 export interface FlogSignature {

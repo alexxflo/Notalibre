@@ -40,6 +40,7 @@ export default function SignIn() {
           gatekeeperPassed: false,
           isBlocked: false,
           interactedFlogIds: [],
+          following: [],
         };
         // Use non-blocking call. Error will be handled globally.
         setDocumentNonBlocking(userDocRef, newUserProfile, {});

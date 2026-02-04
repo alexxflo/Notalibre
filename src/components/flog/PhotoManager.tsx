@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useUser } from '@/firebase';
 import { serverTimestamp, DocumentReference, increment } from 'firebase/firestore';
-import { FlogProfile } from '@/types';
+import { FlogProfile, UserProfile } from '@/types';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -14,13 +14,14 @@ import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 type PhotoManagerProps = {
   flogProfile: FlogProfile;
   flogProfileRef: DocumentReference<FlogProfile>;
+  userProfile: UserProfile;
 };
 
 const COOLDOWN_HOURS = 24;
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_DATA_URL_BYTES = 1024 * 1024; // 1 MiB (Firestore limit)
 
-export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManagerProps) {
+export default function PhotoManager({ flogProfile, flogProfileRef, userProfile }: PhotoManagerProps) {
   const { user } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(flogProfile.description);
@@ -64,7 +65,7 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
         const img = document.createElement('img');
         img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 800;
+            const MAX_WIDTH = 1024;
             const scaleSize = MAX_WIDTH / img.width;
             canvas.width = MAX_WIDTH;
             canvas.height = img.height * scaleSize;
@@ -73,7 +74,7 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
             if (!ctx) return;
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
 
             if (compressedDataUrl.length > MAX_DATA_URL_BYTES) {
                 toast({ variant: 'destructive', title: 'Imagen demasiado grande', description: 'Incluso comprimida, la imagen es demasiado grande para la base de datos. Por favor, elige una con menor resolución.' });
@@ -162,6 +163,17 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
           </button>
         )}
       </div>
+      
+      <div className="flex flex-col sm:flex-row gap-4 mb-4 text-center">
+        <div className="flex-1 flog-panel !p-2 !bg-black/20">
+            <div className="text-2xl font-bold flog-theme-color">{flogProfile.followerCount ?? 0}</div>
+            <div className="text-xs uppercase tracking-widest text-slate-400">Seguidores</div>
+        </div>
+        <div className="flex-1 flog-panel !p-2 !bg-black/20">
+            <div className="text-2xl font-bold flog-theme-color">{userProfile.following?.length ?? 0}</div>
+            <div className="text-xs uppercase tracking-widest text-slate-400">Siguiendo</div>
+        </div>
+      </div>
 
       {isEditing ? (
         <div className="space-y-4">
@@ -191,7 +203,7 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
           </div>
           
           <p className="text-xs text-yellow-500/80 mt-2 text-center">
-            <b>Nota:</b> Para mantener la app simple, tu foto se comprime y se guarda en la base de datos, lo que tiene límites de tamaño. Para fotos de alta calidad, la próxima versión usará Firebase Storage.
+            <b>Nota:</b> Para mantener la app rápida y dentro de los límites de la base de datos, tu foto se comprime antes de subirla. Se intenta preservar la mayor calidad posible sin superar el límite de 1MB.
           </p>
            {!canUpdatePhoto() && (
                 <p className="text-xs text-yellow-500 mt-1 flex items-center justify-center gap-1"><Clock className="w-3 h-3" /> No puedes cambiar la foto aún.</p>

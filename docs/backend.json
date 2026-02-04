@@ -37,6 +37,13 @@
             "items": {
                 "type": "string"
             }
+        },
+        "following": {
+            "type": "array",
+            "description": "Array of user IDs this user is following.",
+            "items": {
+                "type": "string"
+            }
         }
       },
       "required": [
@@ -228,6 +235,10 @@
         "dislikes": {
             "type": "number",
             "description": "The number of dislikes the main photo has received."
+        },
+        "followerCount": {
+            "type": "number",
+            "description": "The number of users following this flog."
         }
       },
       "required": [

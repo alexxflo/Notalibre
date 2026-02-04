@@ -40,6 +40,7 @@ export default function FlogDashboard({ userProfile }: FlogDashboardProps) {
           themeColor: 'cyan',
           likes: 0,
           dislikes: 0,
+          followerCount: 0,
         };
         
         // Use non-blocking call for creation. Errors are handled globally.
@@ -68,7 +69,7 @@ export default function FlogDashboard({ userProfile }: FlogDashboardProps) {
     };
   }, []);
 
-  if (isFlogLoading || isInitializing) {
+  if (isFlogLoading || isInitializing || !userProfile) {
     return <Loader2 className="h-16 w-16 animate-spin text-cyan-400 my-16" />;
   }
 
@@ -87,13 +88,13 @@ export default function FlogDashboard({ userProfile }: FlogDashboardProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna Izquierda y Central */}
         <div className="lg:col-span-2 space-y-6">
-          <PhotoManager flogProfile={flogProfile} flogProfileRef={flogProfileRef} />
+          <PhotoManager flogProfile={flogProfile} flogProfileRef={flogProfileRef} userProfile={userProfile} />
           <Guestbook userProfile={userProfile} flogProfile={flogProfile} />
         </div>
 
         {/* Columna Derecha */}
         <div className="space-y-6">
-          <FavoritesList />
+          <FavoritesList userProfile={userProfile} />
         </div>
       </div>
     </div>

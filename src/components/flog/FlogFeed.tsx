@@ -5,20 +5,24 @@ import Image from 'next/image';
 import useEmblaCarousel from 'embla-carousel-react';
 import { FlogProfile, UserProfile } from '@/types';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, doc, increment, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { collection, query, doc, increment, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { Loader2, ThumbsUp, ThumbsDown, X, Heart } from 'lucide-react';
+import { Loader2, ThumbsUp, ThumbsDown, X, Heart, UserPlus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
-const FlogCard = ({ flog, onDislike, onLike }: { flog: FlogProfile, onDislike: () => void, onLike: () => void }) => {
+const FlogCard = ({ flog, onDislike, onLike, onFollow, isFollowing }: { flog: FlogProfile, onDislike: () => void, onLike: () => void, onFollow: () => void, isFollowing: boolean }) => {
     return (
         <div className="flog-panel flog-theme-border flog-theme-shadow relative w-full max-w-md mx-auto aspect-[3/4] flex flex-col">
             <div className="absolute top-2 left-2 flex items-center gap-2 bg-black/50 p-2 rounded-lg z-10">
                 <p className="font-bold text-white">{flog.username}</p>
+            </div>
+             <div className="absolute top-2 right-2 flex items-center gap-2 bg-black/50 p-2 rounded-lg z-10 text-white">
+                <Users className="h-4 w-4" />
+                <span className="font-bold text-sm">{flog.followerCount ?? 0}</span>
             </div>
 
             <Image
@@ -43,9 +47,12 @@ const FlogCard = ({ flog, onDislike, onLike }: { flog: FlogProfile, onDislike: (
                 </div>
             </div>
 
-            <div className="absolute bottom-[-70px] left-1/2 -translate-x-1/2 flex items-center gap-8">
+            <div className="absolute bottom-[-70px] left-1/2 -translate-x-1/2 flex items-center gap-4">
                 <Button onClick={onDislike} variant="outline" size="icon" className="h-16 w-16 rounded-full bg-black/50 border-2 border-red-500 text-red-500 hover:bg-red-900/50 hover:text-red-400">
                     <X className="h-8 w-8" />
+                </Button>
+                <Button onClick={onFollow} variant="outline" size="icon" className={`h-20 w-20 rounded-full bg-black/50 border-2  hover:bg-blue-900/50 ${isFollowing ? 'border-blue-400 text-blue-400' : 'border-slate-500 text-slate-400'}`}>
+                    <UserPlus className="h-8 w-8" />
                 </Button>
                  <Button onClick={onLike} variant="outline" size="icon" className="h-16 w-16 rounded-full bg-black/50 border-2 border-green-500 text-green-500 hover:bg-green-900/50 hover:text-green-400">
                     <Heart className="h-8 w-8" />
@@ -141,6 +148,35 @@ export default function FlogFeed({ userProfile, setView }: { userProfile: UserPr
         emblaApi?.scrollNext();
 
     }, [selectedFlog, newSignature, user, userProfile, firestore, toast, emblaApi, markAsInteracted]);
+    
+    const handleFollowToggle = useCallback((flogToFollow: FlogProfile) => {
+        if (!user || !userProfile) return;
+
+        const isCurrentlyFollowing = userProfile.following?.includes(flogToFollow.userId);
+        
+        const currentUserDocRef = doc(firestore, 'users', user.uid);
+        const targetFlogDocRef = doc(firestore, 'flogs', flogToFollow.userId);
+
+        if (isCurrentlyFollowing) {
+            // Unfollow logic
+            updateDocumentNonBlocking(currentUserDocRef, {
+                following: arrayRemove(flogToFollow.userId)
+            });
+            updateDocumentNonBlocking(targetFlogDocRef, {
+                followerCount: increment(-1)
+            });
+            toast({ description: `Dejaste de seguir a ${flogToFollow.username}.` });
+        } else {
+            // Follow logic
+            updateDocumentNonBlocking(currentUserDocRef, {
+                following: arrayUnion(flogToFollow.userId)
+            });
+            updateDocumentNonBlocking(targetFlogDocRef, {
+                followerCount: increment(1)
+            });
+            toast({ description: `Ahora sigues a ${flogToFollow.username}.` });
+        }
+    }, [user, userProfile, firestore, toast]);
 
 
     if (isLoading) {
@@ -159,7 +195,13 @@ export default function FlogFeed({ userProfile, setView }: { userProfile: UserPr
                     {filteredFlogs.map((flog) => (
                          <div className="min-w-0 flex-[0_0_100%] flex justify-center" key={flog.id}>
                             <div className='w-full max-w-md pb-24'>
-                                <FlogCard flog={flog} onDislike={() => handleDislike(flog)} onLike={() => handleLikeClick(flog)} />
+                                <FlogCard 
+                                    flog={flog} 
+                                    onDislike={() => handleDislike(flog)} 
+                                    onLike={() => handleLikeClick(flog)}
+                                    onFollow={() => handleFollowToggle(flog)}
+                                    isFollowing={userProfile.following?.includes(flog.userId) ?? false}
+                                />
                             </div>
                         </div>
                     ))}
