@@ -70,5 +70,34 @@ service cloud.firestore {
         // Any authenticated user can send a message, but they must be the author
         allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
+
+    // --- Vortex-Flog Rules ---
+    match /flogs/{userId} {
+      allow read: if request.auth != null;
+
+      // Users can create their own Flog profile
+      allow create: if request.auth.uid == userId
+                    && request.resource.data.userId == userId;
+
+      // Allow updates to non-critical fields anytime
+      allow update: if request.auth.uid == userId
+                     && request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl;
+
+      // Allow photo update only if 24h have passed
+      allow update: if request.auth.uid == userId
+                     && request.resource.data.mainPhotoUrl != resource.data.mainPhotoUrl
+                     && request.time > resource.data.lastPhotoUpdate + duration.value(24, 'h');
+    }
+    
+    match /flogs/{userId}/signatures/{signatureId} {
+      allow list, read: if request.auth != null;
+
+      // Any authenticated user can write a signature
+      allow create: if request.auth != null
+                    && request.resource.data.authorId == request.auth.uid;
+
+      // Flog owner can delete signatures on their own wall
+      allow delete: if request.auth.uid == userId;
+    }
   }
 }

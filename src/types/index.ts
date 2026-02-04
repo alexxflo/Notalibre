@@ -34,3 +34,22 @@ export interface ChatMessage {
   text: string;
   createdAt: Timestamp;
 }
+
+export interface FlogProfile {
+  id: string; // Firestore document ID
+  userId: string;
+  username: string;
+  mainPhotoUrl: string;
+  description: string;
+  lastPhotoUpdate: Timestamp;
+  themeColor: 'cyan' | 'magenta' | 'lime';
+}
+
+export interface FlogSignature {
+  id: string; // Firestore document ID
+  authorId: string;
+  authorUsername: string;
+  authorAvatar: string;
+  text: string;
+  createdAt: Timestamp;
+}

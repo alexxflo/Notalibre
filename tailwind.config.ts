@@ -14,6 +14,7 @@ export default {
         headline: ['Poppins', 'sans-serif'],
         code: ['monospace'],
         logo: ['Orbitron', 'sans-serif'],
+        tahoma: ['Tahoma', 'Geneva', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

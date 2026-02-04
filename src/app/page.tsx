@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Rocket, Users, Loader2, ShieldAlert, Store, Gem } from 'lucide-react';
+import { ArrowLeft, Rocket, Users, Loader2, ShieldAlert, Store, Gem, Camera } from 'lucide-react';
 import GatekeeperModal from '@/components/GatekeeperModal';
 import Header from '@/components/Header';
 import CampaignForm from '@/components/CampaignForm';
@@ -20,9 +20,10 @@ import { UserProfile } from '@/types';
 import MetroClock from '@/components/MetroClock';
 import DashboardTile from '@/components/DashboardTile';
 import InfoTile from '@/components/InfoTile';
+import FlogDashboard from '@/components/flog/FlogDashboard';
 import './metro.css';
 
-export type View = 'dashboard' | 'earn' | 'create' | 'store' | 'admin';
+export type View = 'dashboard' | 'earn' | 'create' | 'store' | 'admin' | 'flog';
 
 const WELCOME_BONUS = 250;
 
@@ -92,7 +93,7 @@ function MainApp() {
   const isAdmin = user?.uid === 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
 
 
-  if (isProfileLoading) {
+  if (isProfileLoading || !userProfile) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Loader2 className="h-16 w-16 animate-spin text-cyan-400" />
@@ -154,6 +155,13 @@ function MainApp() {
             <AdminDashboard />
           </div>
         );
+      case 'flog':
+          return (
+            <div className="w-full flex flex-col items-center">
+              {backButton}
+              <FlogDashboard userProfile={userProfile} />
+            </div>
+          );
       case 'dashboard':
       default:
         return (
@@ -176,12 +184,17 @@ function MainApp() {
                 size="large"
               />
               <DashboardTile
+                title="Mi Flog"
+                icon={Camera}
+                onClick={() => setView('flog')}
+                className="bg-yellow-500 text-black"
+              />
+               <DashboardTile
                 title="Tienda"
                 icon={Store}
                 onClick={() => setView('store')}
                 className="bg-slate-700 text-white"
               />
-
               <InfoTile
                 title="Mis Monedas"
                 value={coinBalance.toLocaleString()}
