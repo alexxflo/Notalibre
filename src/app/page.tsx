@@ -2,12 +2,9 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Rocket, Users, Store, Gem, Camera, ShieldAlert, ThumbsUp, ThumbsDown, User, Bot, Loader2 } from 'lucide-react';
+import { Rocket, Users, Store, Gem, ShieldAlert, ThumbsUp, ThumbsDown, User, Bot, Loader2 } from 'lucide-react';
 import GatekeeperModal from '@/components/GatekeeperModal';
 import Header from '@/components/Header';
-import CampaignForm from '@/components/CampaignForm';
-import EarnSection from '@/components/EarnSection';
-import Pricing from '@/components/Pricing';
 import { Skeleton } from '@/components/ui/skeleton';
 import Footer from '@/components/Footer';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -20,6 +17,10 @@ import { UserProfile } from '@/types';
 import FlogDashboard from '@/components/flog/FlogDashboard';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import './flog.css';
+import EarnSection from '@/components/EarnSection';
+import CampaignForm from '@/components/CampaignForm';
+import Pricing from '@/components/Pricing';
+import FlogFeed from '@/components/flog/FlogFeed';
 
 const WELCOME_BONUS = 250;
 
@@ -85,7 +86,7 @@ function DashboardPanel({ onShowAdmin, isAdmin, coinBalance, updateCoinBalance }
 
 
 function MainApp() {
-  const [view, setView] = useState<'flog' | 'dashboard' | 'admin'>('flog');
+  const [view, setView] = useState<'feed' | 'flog' | 'panel' | 'admin'>('feed');
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -142,18 +143,20 @@ function MainApp() {
     <div className="min-h-screen flex flex-col">
       <Header coinBalance={coinBalance} setView={setView} />
       <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center">
-        {view === 'dashboard' && <DashboardPanel onShowAdmin={() => setView('admin')} isAdmin={isAdmin} coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />}
+        {view === 'panel' && <DashboardPanel onShowAdmin={() => setView('admin')} isAdmin={isAdmin} coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />}
         
         {view === 'admin' && (
           <>
-            <Button variant="ghost" onClick={() => setView('flog')} className="mb-4 self-start text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300">
-                Volver al Flog
+            <Button variant="ghost" onClick={() => setView('feed')} className="mb-4 self-start text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300">
+                Volver al Feed
             </Button>
             <AdminDashboard />
           </>
         )}
         
         {view === 'flog' && <FlogDashboard userProfile={userProfile} />}
+
+        {view === 'feed' && <FlogFeed userProfile={userProfile} />}
       </main>
       <ChatRoom userProfile={userProfile} />
       <Footer />

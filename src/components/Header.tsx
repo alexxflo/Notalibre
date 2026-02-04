@@ -9,7 +9,7 @@ import { doc } from 'firebase/firestore';
 
 type HeaderProps = {
   coinBalance: number;
-  setView: (view: 'flog' | 'dashboard' | 'admin') => void;
+  setView: (view: 'feed' | 'flog' | 'panel' | 'admin') => void;
 };
 
 export default function Header({ coinBalance, setView }: HeaderProps) {
@@ -19,7 +19,7 @@ export default function Header({ coinBalance, setView }: HeaderProps) {
     <header className="bg-slate-900/50 backdrop-blur-lg sticky top-0 z-40 border-b border-slate-700/50">
       <div className="container mx-auto flex justify-between items-center p-4 gap-2">
         <div className="flex-none">
-            <div onClick={() => setView('flog')} className="cursor-pointer">
+            <div onClick={() => setView('feed')} className="cursor-pointer">
                 <VortexLogo className="relative w-36 md:w-48 h-auto" />
             </div>
         </div>
@@ -34,7 +34,7 @@ export default function Header({ coinBalance, setView }: HeaderProps) {
                 <Skeleton className="h-10 w-24 rounded-full bg-slate-700" />
             ) : (
                 <>
-                <Button variant="ghost" size="sm" onClick={() => setView('dashboard')} className="text-slate-300 hover:bg-slate-800/50 hover:text-white uppercase shrink-0 p-2 md:px-3">
+                <Button variant="ghost" size="sm" onClick={() => setView('panel')} className="text-slate-300 hover:bg-slate-800/50 hover:text-white uppercase shrink-0 p-2 md:px-3">
                     <LayoutDashboard className="h-4 w-4 md:mr-2"/>
                     <span className="hidden md:inline">Panel</span>
                 </Button>
