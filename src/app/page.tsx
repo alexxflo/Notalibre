@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Rocket, Users, Loader2, ShieldAlert } from 'lucide-react';
 import GatekeeperModal from '@/components/GatekeeperModal';
@@ -15,7 +15,6 @@ import { doc, runTransaction, increment } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import SignIn from '@/components/auth/SignIn';
 import WatchAdCard from '@/components/WatchAdCard';
-import ActivityFeed from '@/components/ActivityFeed';
 import AdminDashboard from '@/components/AdminDashboard';
 import ChatRoom from '@/components/ChatRoom';
 import { UserProfile } from '@/types';
@@ -194,7 +193,6 @@ function MainApp() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <ActivityFeed />
       <Header coinBalance={coinBalance} setView={setView} />
       <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
         {renderView()}

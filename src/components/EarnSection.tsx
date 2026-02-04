@@ -7,6 +7,7 @@ import { Users, Loader2 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit } from 'firebase/firestore';
 import type { Campaign } from '@/types';
+import ActivityFeed from '@/components/ActivityFeed';
 
 type EarnSectionProps = {
   coinBalance: number;
@@ -63,6 +64,7 @@ export default function EarnSection({ coinBalance, updateCoinBalance }: EarnSect
 
   return (
     <div className="w-full max-w-4xl flex flex-col gap-6 p-2 md:p-6 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-cyan-500/20">
+        <ActivityFeed />
         <div className="text-center md:text-left">
             <h3 className="font-headline text-2xl font-semibold text-cyan-400 flex items-center justify-center md:justify-start gap-2 uppercase">
                 <Users /> Gana Monedas
