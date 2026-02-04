@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
-import { useFirestore, useUser } from '@/firebase';
+import { useUser } from '@/firebase';
 import { updateDoc, serverTimestamp, DocumentReference, increment } from 'firebase/firestore';
 import { FlogProfile } from '@/types';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, Edit, Save, Clock, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Camera, Edit, Save, Clock, ThumbsUp, ThumbsDown, Upload } from 'lucide-react';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 type PhotoManagerProps = {
@@ -18,12 +17,18 @@ type PhotoManagerProps = {
 };
 
 const COOLDOWN_HOURS = 24;
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_DATA_URL_BYTES = 1024 * 1024; // 1 MiB (Firestore limit)
 
 export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManagerProps) {
   const { user } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(flogProfile.description);
-  const [photoUrl, setPhotoUrl] = useState(flogProfile.mainPhotoUrl);
+  
+  const [newPhotoPreview, setNewPhotoPreview] = useState<string | null>(null);
+  const [newPhotoDataUrl, setNewPhotoDataUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const { toast } = useToast();
 
   const isOwner = user?.uid === flogProfile.userId;
@@ -35,9 +40,60 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
     const hoursSinceUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60);
     return hoursSinceUpdate >= COOLDOWN_HOURS;
   };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        toast({ variant: 'destructive', title: 'Archivo no válido', description: 'Por favor, selecciona una imagen.' });
+        return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+        toast({ variant: 'destructive', title: 'Archivo demasiado grande', description: `El tamaño máximo es ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.` });
+        return;
+    }
+    
+    // Create a preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setNewPhotoPreview(previewUrl);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = document.createElement('img');
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800;
+            const scaleSize = MAX_WIDTH / img.width;
+            canvas.width = MAX_WIDTH;
+            canvas.height = img.height * scaleSize;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+            if (compressedDataUrl.length > MAX_DATA_URL_BYTES) {
+                toast({ variant: 'destructive', title: 'Imagen demasiado grande', description: 'Incluso comprimida, la imagen es demasiado grande para la base de datos. Por favor, elige una con menor resolución.' });
+                setNewPhotoPreview(null);
+                setNewPhotoDataUrl(null);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+                URL.revokeObjectURL(previewUrl);
+                return;
+            }
+            
+            setNewPhotoDataUrl(compressedDataUrl);
+        };
+        img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
 
   const handleSave = async () => {
-    const photoChanged = photoUrl !== flogProfile.mainPhotoUrl;
+    const photoChanged = newPhotoDataUrl !== null;
 
     if (photoChanged && !canUpdatePhoto()) {
       toast({
@@ -45,17 +101,13 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
         title: "Cooldown Activo",
         description: `Solo puedes cambiar tu foto principal una vez cada ${COOLDOWN_HOURS} horas.`,
       });
-      setPhotoUrl(flogProfile.mainPhotoUrl); // Revert URL
       return;
     }
 
     try {
-      const dataToUpdate: any = {
-        description,
-      };
-
-      if (photoChanged) {
-        dataToUpdate.mainPhotoUrl = photoUrl;
+      const dataToUpdate: any = { description };
+      if (photoChanged && newPhotoDataUrl) {
+        dataToUpdate.mainPhotoUrl = newPhotoDataUrl;
         dataToUpdate.lastPhotoUpdate = serverTimestamp();
       }
 
@@ -65,13 +117,22 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
         title: "¡Guardado!",
         description: "Tu Flog ha sido actualizado.",
       });
+      
       setIsEditing(false);
-    } catch (error) {
+      setNewPhotoDataUrl(null);
+      setNewPhotoPreview(null);
+      if(fileInputRef.current) fileInputRef.current.value = "";
+
+    } catch (error: any) {
       console.error("Error updating Flog profile:", error);
+      let description = "No se pudo guardar tu perfil. Revisa las reglas de seguridad o intenta de nuevo.";
+      if (error.message.includes("is larger than 1048576 bytes")) {
+        description = "La imagen es demasiado grande para guardar. Por favor, selecciona una imagen más pequeña."
+      }
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "No se pudo guardar tu perfil. Revisa las reglas de seguridad o intenta de nuevo.",
+        title: "Error al Guardar",
+        description,
       });
     }
   };
@@ -94,6 +155,14 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
     toast({ title: '¡Gracias por tu voto!' });
   };
 
+  const handleCancelEdit = () => {
+      setIsEditing(false);
+      setDescription(flogProfile.description);
+      setNewPhotoPreview(null);
+      setNewPhotoDataUrl(null);
+      if(fileInputRef.current) fileInputRef.current.value = "";
+  }
+
 
   return (
     <div className="flog-panel flog-theme-border flog-theme-shadow">
@@ -109,22 +178,38 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
 
       {isEditing ? (
         <div className="space-y-4">
-          <div>
-            <label className="text-xs font-bold uppercase flog-theme-color">URL de la Foto</label>
-            <Input
-              type="text"
-              value={photoUrl}
-              onChange={(e) => setPhotoUrl(e.target.value)}
-              className="flog-input flog-theme-outline"
-              placeholder="https://i.imgur.com/..."
+          <div className='w-full flex justify-center items-center relative'>
+            <Image
+              src={newPhotoPreview || flogProfile.mainPhotoUrl || 'https://placehold.co/800x600'}
+              alt="Main Flog Photo Preview"
+              width={800}
+              height={600}
+              className="main-photo"
+              unoptimized
             />
-            <p className="text-xs text-yellow-500/80 mt-2">
-                <b>Nota:</b> La subida directa de archivos requiere Firebase Storage. Por ahora, sube tu imagen a un servicio como <a href="https://imgur.com/upload" target="_blank" rel="noopener noreferrer" className="underline">Imgur</a> y pega la URL aquí.
-            </p>
-            {!canUpdatePhoto() && (
-                <p className="text-xs text-yellow-500 mt-1 flex items-center gap-1"><Clock className="w-3 h-3" /> No puedes cambiar la foto aún.</p>
-            )}
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              className="flog-button absolute bottom-4"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Subir Foto
+            </Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              accept="image/png, image/jpeg, image/gif, image/webp"
+            />
           </div>
+          
+          <p className="text-xs text-yellow-500/80 mt-2 text-center">
+            <b>Nota:</b> Para mantener la app simple, tu foto se comprime y se guarda en la base de datos, lo que tiene límites de tamaño. Para fotos de alta calidad, la próxima versión usará Firebase Storage.
+          </p>
+           {!canUpdatePhoto() && (
+                <p className="text-xs text-yellow-500 mt-1 flex items-center justify-center gap-1"><Clock className="w-3 h-3" /> No puedes cambiar la foto aún.</p>
+            )}
+
           <div>
             <label className="text-xs font-bold uppercase flog-theme-color">Descripción</label>
             <Textarea
@@ -139,7 +224,7 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
               <Save className="w-4 h-4 mr-2" />
               Guardar
             </Button>
-            <Button onClick={() => setIsEditing(false)} variant="ghost" className="text-slate-400 hover:text-white">
+            <Button onClick={handleCancelEdit} variant="ghost" className="text-slate-400 hover:text-white">
               Cancelar
             </Button>
           </div>
