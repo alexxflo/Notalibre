@@ -207,6 +207,7 @@
         },
         "lastPhotoUpdate": {
           "type": "string",
+          "format": "date-time",
           "description": "Timestamp of the last time the main photo was updated."
         },
         "themeColor": {

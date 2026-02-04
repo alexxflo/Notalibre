@@ -75,9 +75,16 @@ service cloud.firestore {
     match /flogs/{userId} {
       allow read: if request.auth != null;
 
-      // Users can create their own Flog profile
+      // Users can create their own Flog profile, ensuring initial state is correct.
       allow create: if request.auth.uid == userId
-                    && request.resource.data.userId == userId;
+                    && request.resource.data.userId == userId
+                    && request.resource.data.likes == 0
+                    && request.resource.data.dislikes == 0
+                    && request.resource.data.lastPhotoUpdate is timestamp
+                    && request.resource.data.keys().hasOnly([
+                        'userId', 'username', 'mainPhotoUrl', 'description', 
+                        'lastPhotoUpdate', 'themeColor', 'likes', 'dislikes'
+                    ]);
 
       // Allow owner to update non-photo fields
       allow update: if request.auth.uid == userId
