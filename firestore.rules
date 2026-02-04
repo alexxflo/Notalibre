@@ -62,5 +62,13 @@ service cloud.firestore {
       // Allow the client to increment the user count upon sign-up.
       allow create, update: if request.auth != null;
     }
+
+    // --- Chat Rules ---
+    match /messages/{messageId} {
+        // Any authenticated user can read the chat history
+        allow read: if request.auth != null;
+        // Any authenticated user can send a message, but they must be the author
+        allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
   }
 }

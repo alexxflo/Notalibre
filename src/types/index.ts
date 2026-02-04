@@ -25,3 +25,12 @@ export interface DailyStats {
     count: number;
     date: string; // YYYY-MM-DD
 }
+
+export interface ChatMessage {
+  id: string; // Firestore document ID
+  userId: string;
+  username: string;
+  avatarUrl: string;
+  text: string;
+  createdAt: Timestamp;
+}

@@ -17,6 +17,7 @@ import SignIn from '@/components/auth/SignIn';
 import WatchAdCard from '@/components/WatchAdCard';
 import ActivityFeed from '@/components/ActivityFeed';
 import AdminDashboard from '@/components/AdminDashboard';
+import ChatRoom from '@/components/ChatRoom';
 import { UserProfile } from '@/types';
 
 export type View = 'home' | 'earn' | 'create' | 'store' | 'admin';
@@ -198,6 +199,7 @@ function MainApp() {
       <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
         {renderView()}
       </main>
+      <ChatRoom userProfile={userProfile} />
       <Footer />
     </div>
   );
