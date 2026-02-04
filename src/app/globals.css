@@ -1,3 +1,5 @@
+@import './metro.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -26,8 +28,6 @@
     --radius: 0.8rem;
   }
 }
-
-@import './metro.css';
 
 @layer base {
   * {
