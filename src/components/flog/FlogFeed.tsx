@@ -155,6 +155,7 @@ export default function FlogFeed({ userProfile, setView }: { userProfile: UserPr
         const isCurrentlyFollowing = userProfile.following?.includes(flogToFollow.userId);
         
         const currentUserDocRef = doc(firestore, 'users', user.uid);
+        const targetUserDocRef = doc(firestore, 'users', flogToFollow.userId);
         const targetFlogDocRef = doc(firestore, 'flogs', flogToFollow.userId);
 
         if (isCurrentlyFollowing) {
@@ -162,6 +163,7 @@ export default function FlogFeed({ userProfile, setView }: { userProfile: UserPr
             updateDocumentNonBlocking(currentUserDocRef, {
                 following: arrayRemove(flogToFollow.userId)
             });
+            updateDocumentNonBlocking(targetUserDocRef, { followers: arrayRemove(user.uid) });
             updateDocumentNonBlocking(targetFlogDocRef, {
                 followerCount: increment(-1)
             });
@@ -171,6 +173,7 @@ export default function FlogFeed({ userProfile, setView }: { userProfile: UserPr
             updateDocumentNonBlocking(currentUserDocRef, {
                 following: arrayUnion(flogToFollow.userId)
             });
+            updateDocumentNonBlocking(targetUserDocRef, { followers: arrayUnion(user.uid) });
             updateDocumentNonBlocking(targetFlogDocRef, {
                 followerCount: increment(1)
             });

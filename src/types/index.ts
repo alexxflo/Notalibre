@@ -21,6 +21,7 @@ export interface UserProfile {
   isBlocked?: boolean;
   interactedFlogIds?: string[];
   following?: string[];
+  followers?: string[];
 }
 
 export interface DailyStats {

@@ -39,14 +39,17 @@ export default function FavoritesList({ userProfile }: { userProfile: UserProfil
         const isCurrentlyFollowing = userProfile.following?.includes(targetUser.id);
         
         const currentUserDocRef = doc(firestore, 'users', user.uid);
+        const targetUserDocRef = doc(firestore, 'users', targetUser.id);
         const targetFlogDocRef = doc(firestore, 'flogs', targetUser.id);
 
         if (isCurrentlyFollowing) {
             updateDocumentNonBlocking(currentUserDocRef, { following: arrayRemove(targetUser.id) });
+            updateDocumentNonBlocking(targetUserDocRef, { followers: arrayRemove(user.uid) });
             updateDocumentNonBlocking(targetFlogDocRef, { followerCount: increment(-1) });
             toast({ description: `Dejaste de seguir a ${targetUser.username}.` });
         } else {
             updateDocumentNonBlocking(currentUserDocRef, { following: arrayUnion(targetUser.id) });
+            updateDocumentNonBlocking(targetUserDocRef, { followers: arrayUnion(user.uid) });
             updateDocumentNonBlocking(targetFlogDocRef, { followerCount: increment(1) });
             toast({ description: `Ahora sigues a ${targetUser.username}.` });
         }

@@ -41,6 +41,7 @@ export default function SignIn() {
           isBlocked: false,
           interactedFlogIds: [],
           following: [],
+          followers: [],
         };
         // Use non-blocking call. Error will be handled globally.
         setDocumentNonBlocking(userDocRef, newUserProfile, {});

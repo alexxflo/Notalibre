@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import PhotoManager from './PhotoManager';
 import Guestbook from './Guestbook';
 import FavoritesList from './FavoritesList';
+import FollowLists from './FollowLists';
 
 type FlogDashboardProps = {
   userProfile: UserProfile;
@@ -94,6 +95,7 @@ export default function FlogDashboard({ userProfile }: FlogDashboardProps) {
 
         {/* Columna Derecha */}
         <div className="space-y-6">
+          <FollowLists userProfile={userProfile} />
           <FavoritesList userProfile={userProfile} />
         </div>
       </div>

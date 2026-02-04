@@ -10,13 +10,32 @@ service cloud.firestore {
     // --- User Collection/Document Rules ---
     match /users/{userId} {
       // Allow any authenticated user to list users for the F/F feature.
-      allow list: if request.auth != null;
+      allow list, get: if request.auth != null;
       
       // Admin can get any user profile and write to it.
-      allow get, write: if isAdmin();
+      allow write: if isAdmin();
 
-      // A user can get and write to their own profile (but not others)
-      allow get, write: if request.auth.uid == userId;
+      // A user can create their own profile
+      allow create: if request.auth.uid == userId;
+
+      // A user can get their own profile
+      allow get: if request.auth.uid == userId;
+
+      // A user can update their OWN profile, but cannot change their followers list manually.
+      allow update: if request.auth.uid == userId &&
+                      request.resource.data.followers == resource.data.followers;
+      
+      // Any other authenticated user can update ONLY the followers field by ensuring
+      // that all other core profile fields remain unchanged.
+      allow update: if request.auth != null && request.auth.uid != userId &&
+                      request.resource.data.username == resource.data.username &&
+                      request.resource.data.email == resource.data.email &&
+                      request.resource.data.avatarUrl == resource.data.avatarUrl &&
+                      request.resource.data.coinBalance == resource.data.coinBalance &&
+                      request.resource.data.gatekeeperPassed == resource.data.gatekeeperPassed &&
+                      request.resource.data.isBlocked == resource.data.isBlocked &&
+                      request.resource.data.interactedFlogIds == resource.data.interactedFlogIds &&
+                      request.resource.data.following == resource.data.following;
 
       // The unauthenticated bot can read any user profile for processing
       allow get: if request.auth == null;
@@ -74,14 +93,8 @@ service cloud.firestore {
       // Any authenticated user can read any flog profile
       allow read: if request.auth != null;
       
-      // A user can create their OWN flog profile
-      allow create: if request.auth.uid == userId;
-
-      // A user can delete their OWN flog profile
-      allow delete: if request.auth.uid == userId;
-      
-      // The owner can update any field on their OWN profile
-      allow update: if request.auth.uid == userId;
+      // A user can write to their own flog profile
+      allow write: if request.auth.uid == userId;
       
       // Any other authenticated user can update ONLY the counter fields by ensuring
       // that all other core profile fields remain unchanged.
