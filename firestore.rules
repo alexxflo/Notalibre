@@ -82,8 +82,8 @@ service cloud.firestore {
                     && request.resource.data.dislikes == 0
                     && request.resource.data.lastPhotoUpdate is timestamp
                     && request.resource.data.keys().hasOnly([
-                        'userId', 'username', 'mainPhotoUrl', 'description', 
-                        'lastPhotoUpdate', 'themeColor', 'likes', 'dislikes'
+                        'description', 'dislikes', 'lastPhotoUpdate', 'likes', 
+                        'mainPhotoUrl', 'themeColor', 'userId', 'username'
                     ]);
 
       // Allow owner to update non-photo fields
