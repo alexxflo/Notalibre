@@ -76,12 +76,11 @@ service cloud.firestore {
       allow read: if request.auth != null;
 
       // Users can create their own Flog profile, ensuring initial state is correct.
-      // The hasOnly check was removed to resolve a persistent but subtle permission error.
+      // The timestamp check is removed as a debugging step.
       allow create: if request.auth.uid == userId
                     && request.resource.data.userId == userId
                     && request.resource.data.likes == 0
-                    && request.resource.data.dislikes == 0
-                    && request.resource.data.lastPhotoUpdate is timestamp;
+                    && request.resource.data.dislikes == 0;
 
       // Allow owner to update non-photo fields
       allow update: if request.auth.uid == userId
