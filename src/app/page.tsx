@@ -11,7 +11,7 @@ import Pricing from '@/components/Pricing';
 import { Skeleton } from '@/components/ui/skeleton';
 import Footer from '@/components/Footer';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, runTransaction, increment } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import SignIn from '@/components/auth/SignIn';
 import WatchAdCard from '@/components/WatchAdCard';
@@ -34,6 +34,41 @@ function MainApp() {
   }, [firestore, user]);
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  
+  useEffect(() => {
+    if (!firestore) return;
+
+    const trackDailyVisit = async () => {
+        const today = new Date().toISOString().split('T')[0];
+        const lastVisit = localStorage.getItem('lastDailyVisit');
+
+        if (lastVisit === today) {
+            return; // Already tracked today
+        }
+
+        const dailyStatsRef = doc(firestore, 'stats', 'daily_active');
+
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const dailyStatsDoc = await transaction.get(dailyStatsRef);
+                
+                if (!dailyStatsDoc.exists() || dailyStatsDoc.data().date !== today) {
+                    // New day or first ever visit, reset counter
+                    transaction.set(dailyStatsRef, { count: 1, date: today });
+                } else {
+                    // Same day, increment counter
+                    transaction.update(dailyStatsRef, { count: increment(1) });
+                }
+            });
+
+            localStorage.setItem('lastDailyVisit', today);
+        } catch (e) {
+            console.error("Failed to track daily visit:", e);
+        }
+    };
+
+    trackDailyVisit();
+  }, [firestore]);
 
   const handleGatekeeperConfirm = () => {
     if (!userProfileRef) return;

@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import { collection, doc } from 'firebase/firestore';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { UserProfile } from '@/types';
+import { UserProfile, DailyStats } from '@/types';
 import {
   Table,
   TableBody,
@@ -16,8 +16,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Ban, ShieldAlert } from 'lucide-react';
+import { Loader2, Ban, ShieldAlert, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ADMIN_UID = 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
 
@@ -34,7 +36,16 @@ export default function AdminDashboard() {
     return collection(firestore, 'users');
   }, [firestore, user]);
 
-  const { data: users, isLoading } = useCollection<UserProfile>(usersQuery);
+  const dailyStatsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'stats', 'daily_active');
+  }, [firestore]);
+
+  const { data: users, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
+  const { data: dailyStats, isLoading: isDailyStatsLoading } = useDoc<DailyStats>(dailyStatsRef);
+  
+  const today = new Date().toISOString().split('T')[0];
+  const dailyActiveUsers = dailyStats?.date === today ? dailyStats.count : 0;
 
   const handleCoinChange = (userId: string, value: string) => {
     setCoinInputs(prev => ({ ...prev, [userId]: value }));
@@ -80,7 +91,7 @@ export default function AdminDashboard() {
     );
   }, [users, filter]);
 
-  if (isLoading) {
+  if (areUsersLoading) {
     return <div className="flex justify-center items-center py-16"><Loader2 className="h-12 w-12 animate-spin text-cyan-400" /></div>;
   }
 
@@ -91,6 +102,25 @@ export default function AdminDashboard() {
   return (
     <div className="w-full max-w-7xl flex flex-col gap-6 p-2 md:p-6 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-red-500/20">
       <h2 className="text-3xl font-bold font-headline text-red-400">Panel de Administrador</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-slate-300">Usuarios Activos Hoy</CardTitle>
+                <Users className="h-4 w-4 text-slate-400" />
+            </CardHeader>
+            <CardContent>
+                {isDailyStatsLoading ? (
+                    <Skeleton className="h-8 w-1/4 bg-slate-700" />
+                ) : (
+                    <div className="text-2xl font-bold text-white">{dailyActiveUsers.toLocaleString()}</div>
+                )}
+                <p className="text-xs text-slate-400">Usuarios únicos que han entrado hoy</p>
+            </CardContent>
+        </Card>
+      </div>
+
+
       <Input
         placeholder="Filtrar por nombre o email..."
         value={filter}

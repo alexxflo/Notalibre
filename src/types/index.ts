@@ -20,3 +20,8 @@ export interface UserProfile {
   gatekeeperPassed: boolean;
   isBlocked?: boolean;
 }
+
+export interface DailyStats {
+    count: number;
+    date: string; // YYYY-MM-DD
+}

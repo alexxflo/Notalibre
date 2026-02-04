@@ -54,6 +54,25 @@
         "count"
       ]
     },
+    "DailyStats": {
+      "title": "DailyStats",
+      "type": "object",
+      "description": "Represents daily active user statistics.",
+      "properties": {
+        "count": {
+          "type": "number",
+          "description": "The number of unique active users for a given day."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date for the stats in YYYY-MM-DD format."
+        }
+      },
+      "required": [
+        "count",
+        "date"
+      ]
+    },
     "Campaign": {
       "title": "Campaign",
       "description": "Represents a user-created campaign to gain followers.",
@@ -147,6 +166,12 @@
         "$ref": "#/entities/Stats"
       },
       "description": "Stores the total count of registered users."
+    },
+    "/stats/daily_active": {
+      "schema": {
+        "$ref": "#/entities/DailyStats"
+      },
+      "description": "Stores the count of daily active users. Resets every day."
     },
     "/campaigns/{campaignId}": {
       "schema": {
