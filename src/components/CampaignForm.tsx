@@ -6,11 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from "@/hooks/use-toast";
 import { Rocket, AlertTriangle, CheckCircle, Image as ImageIcon } from 'lucide-react';
-import { View } from '@/app/page';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-
 
 const COST_PER_FOLLOWER = 5;
 const REWARD_PER_FOLLOW = 3;
@@ -18,7 +16,7 @@ const REWARD_PER_FOLLOW = 3;
 type CampaignFormProps = {
   coinBalance: number;
   updateCoinBalance: (newBalance: number) => void;
-  setView: (view: View) => void;
+  setView: (view: any) => void; // Can be any for sheet closing
 };
 
 export default function CampaignForm({ coinBalance, updateCoinBalance, setView }: CampaignFormProps) {
@@ -100,10 +98,8 @@ export default function CampaignForm({ coinBalance, updateCoinBalance, setView }
       toast({
         variant: "destructive",
         title: "Fondos Insuficientes",
-        description: `Necesitas ${totalCost} monedas, pero solo tienes ${coinBalance}. Serás redirigido a la tienda.`,
-        action: <Button onClick={() => setView('store')}>Ir a la Tienda</Button>,
+        description: `Necesitas ${totalCost} monedas, pero solo tienes ${coinBalance}.`,
       });
-      setTimeout(() => setView('store'), 3000);
       return;
     }
     if (!url.startsWith('https://')) {
@@ -156,14 +152,13 @@ export default function CampaignForm({ coinBalance, updateCoinBalance, setView }
     setUrl('');
     setUsername('');
     setFollowers(10);
-    setView('home');
+    setView(false); // Close sheet
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-8 p-6 bg-slate-900/50 border-2 border-magenta-500/30 backdrop-blur-sm rounded-2xl w-full max-w-4xl mx-auto shadow-lg shadow-magenta-500/10">
+    <div className="flex flex-col md:flex-row gap-8 p-6 bg-slate-900/50 backdrop-blur-sm rounded-2xl w-full max-w-4xl mx-auto">
       <div className="flex-grow space-y-6">
         <div>
-          <h3 className="font-headline text-xl font-semibold text-magenta-400 uppercase">Crea una Campaña para Ganar Seguidores</h3>
           <p className="text-slate-400">Publica tu perfil para que otros te sigan. Cada seguidor que consigas costará {COST_PER_FOLLOWER} monedas.</p>
         </div>
         

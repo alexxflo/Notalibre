@@ -38,6 +38,8 @@ export default function FlogDashboard({ userProfile }: FlogDashboardProps) {
             description: '¡Bienvenido a mi Flog! Deja tu firma.',
             lastPhotoUpdate: new Date(0) as any, // Set to epoch to allow immediate update
             themeColor: 'cyan',
+            likes: 0,
+            dislikes: 0,
           };
           await setDoc(flogProfileRef, newFlogProfile);
         } catch (e) {
@@ -55,20 +57,31 @@ export default function FlogDashboard({ userProfile }: FlogDashboardProps) {
     return `flog-theme-${flogProfile.themeColor}`;
   }, [flogProfile?.themeColor]);
 
+  useEffect(() => {
+    // Add flog-mode class to body when this component mounts
+    document.body.classList.add('flog-mode');
+    // Remove it when the component unmounts
+    return () => {
+      document.body.classList.remove('flog-mode');
+    };
+  }, []);
+
   if (isFlogLoading || isInitializing) {
     return <Loader2 className="h-16 w-16 animate-spin text-cyan-400 my-16" />;
   }
 
-  if (!flogProfile) {
+  if (error || !flogProfile) {
     return (
-      <div className="text-center my-16">
-        <p className="text-red-500">No se pudo cargar o crear tu perfil de Flog.</p>
+      <div className="text-center my-16 text-white p-8 bg-red-900/20 border border-red-500 rounded-lg">
+        <p className="font-bold text-lg">Error al Cargar el Flog</p>
+        <p className="text-red-300">No se pudo cargar o crear tu perfil de Flog.</p>
+        <p className="text-xs mt-2 text-slate-400">{error?.message}</p>
       </div>
     );
   }
 
   return (
-    <div className={`flog-mode w-full max-w-7xl p-4 ${themeClass}`}>
+    <div className={`w-full max-w-7xl p-4 ${themeClass}`}>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna Izquierda y Central */}
         <div className="lg:col-span-2 space-y-6">

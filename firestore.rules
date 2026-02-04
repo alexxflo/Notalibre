@@ -79,14 +79,27 @@ service cloud.firestore {
       allow create: if request.auth.uid == userId
                     && request.resource.data.userId == userId;
 
-      // Allow updates to non-critical fields anytime
+      // Allow owner to update non-photo fields
       allow update: if request.auth.uid == userId
                      && request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl;
 
-      // Allow photo update only if 24h have passed
+      // Allow owner to update photo only if 24h have passed
       allow update: if request.auth.uid == userId
                      && request.resource.data.mainPhotoUrl != resource.data.mainPhotoUrl
                      && request.time > resource.data.lastPhotoUpdate + duration.value(24, 'h');
+
+      // Allow any user to like or dislike (but not both at once)
+      allow update: if request.auth.uid != null && request.auth.uid != userId && (
+          (request.resource.data.likes == resource.data.likes + 1 && request.resource.data.dislikes == resource.data.dislikes) ||
+          (request.resource.data.dislikes == resource.data.dislikes + 1 && request.resource.data.likes == resource.data.likes)
+        ) &&
+        // Ensure no other fields are being changed
+        request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl &&
+        request.resource.data.description == resource.data.description &&
+        request.resource.data.lastPhotoUpdate == resource.data.lastPhotoUpdate &&
+        request.resource.data.themeColor == resource.data.themeColor &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.username == resource.data.username;
     }
     
     match /flogs/{userId}/signatures/{signatureId} {

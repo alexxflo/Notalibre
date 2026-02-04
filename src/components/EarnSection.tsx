@@ -63,12 +63,9 @@ export default function EarnSection({ coinBalance, updateCoinBalance }: EarnSect
 
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-6 p-2 md:p-6 bg-slate-900/50 backdrop-blur-sm rounded-lg border border-cyan-500/20">
+    <div className="w-full max-w-4xl flex flex-col gap-6 p-2 md:p-6 bg-slate-900/50 backdrop-blur-sm rounded-lg">
         <ActivityFeed />
         <div className="text-center md:text-left">
-            <h3 className="font-headline text-2xl font-semibold text-cyan-400 flex items-center justify-center md:justify-start gap-2 uppercase">
-                <Users /> Gana Monedas
-            </h3>
             <p className="text-slate-400 mt-1">Completa tareas para ganar monedas. Cada acción verificada te da una recompensa.</p>
         </div>
         <div className="space-y-4">

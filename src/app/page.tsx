@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Rocket, Users, Loader2, ShieldAlert, Store, Gem, Camera } from 'lucide-react';
+import { Rocket, Users, Store, Gem, Camera, ShieldAlert, ThumbsUp, ThumbsDown, User, Bot } from 'lucide-react';
 import GatekeeperModal from '@/components/GatekeeperModal';
 import Header from '@/components/Header';
 import CampaignForm from '@/components/CampaignForm';
@@ -11,24 +11,86 @@ import Pricing from '@/components/Pricing';
 import { Skeleton } from '@/components/ui/skeleton';
 import Footer from '@/components/Footer';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, runTransaction, increment } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import SignIn from '@/components/auth/SignIn';
 import AdminDashboard from '@/components/AdminDashboard';
 import ChatRoom from '@/components/ChatRoom';
 import { UserProfile } from '@/types';
-import MetroClock from '@/components/MetroClock';
-import DashboardTile from '@/components/DashboardTile';
-import InfoTile from '@/components/InfoTile';
 import FlogDashboard from '@/components/flog/FlogDashboard';
-import './metro.css';
-
-export type View = 'dashboard' | 'earn' | 'create' | 'store' | 'admin' | 'flog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import './flog.css';
 
 const WELCOME_BONUS = 250;
 
+function FlogNav({ onShowAdmin, isAdmin }: { onShowAdmin: () => void; isAdmin: boolean }) {
+  return (
+    <div className="bg-slate-900/70 backdrop-blur-md p-4 rounded-lg border border-slate-700 flex items-center justify-center gap-2 md:gap-4 mb-6">
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button className="font-headline uppercase bg-cyan-500 text-black hover:bg-cyan-400 shadow-[0_0_15px_hsl(var(--primary)/0.5)]">
+            <Users className="mr-2" /> Ganar Monedas
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="bg-slate-900 border-slate-700 text-white w-full md:w-auto">
+          <SheetHeader>
+            <SheetTitle className="text-cyan-400 font-headline text-2xl">Gana Monedas</SheetTitle>
+          </SheetHeader>
+          {/* This inner div is needed for scrolling within the sheet */}
+          <div className="mt-4 h-[calc(100%-4rem)] overflow-y-auto">
+            <EarnSection coinBalance={0} updateCoinBalance={() => {}} />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button className="font-headline uppercase bg-magenta-600 text-white hover:bg-magenta-500 shadow-[0_0_15px_hsl(var(--secondary)/0.5)]">
+            <Rocket className="mr-2" /> Crear Campaña
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="bg-slate-900 border-slate-700 text-white w-full md:w-auto">
+          <SheetHeader>
+            <SheetTitle className="text-magenta-400 font-headline text-2xl">Crear Campaña</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 h-[calc(100%-4rem)] overflow-y-auto">
+            <CampaignForm coinBalance={0} updateCoinBalance={() => {}} setView={() => {}} />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="outline" className="font-headline uppercase border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white">
+            <Store className="mr-2" /> Tienda
+          </Button>
+        </SheetTrigger>
+        <SheetContent className="bg-slate-900 border-slate-700 text-white w-full md:w-auto">
+          <SheetHeader>
+            <SheetTitle className="text-cyan-400 font-headline text-2xl">Tienda de Monedas</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4 h-[calc(100%-4rem)] overflow-y-auto">
+            <Pricing coinBalance={0} updateCoinBalance={() => {}} />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {isAdmin && (
+         <Sheet>
+          <SheetTrigger asChild>
+              <Button onClick={onShowAdmin} variant="destructive" className="font-headline uppercase">
+                <ShieldAlert className="mr-2" /> Admin
+              </Button>
+          </SheetTrigger>
+        </Sheet>
+      )}
+    </div>
+  );
+}
+
+
 function MainApp() {
-  const [view, setView] = useState<View>('dashboard');
+  const [showAdmin, setShowAdmin] = useState(false);
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -37,43 +99,7 @@ function MainApp() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
-  const statsRef = useMemoFirebase(() => doc(firestore, 'stats', 'users'), [firestore]);
-
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
-  const { data: stats, isLoading: isStatsLoading } = useDoc(statsRef);
-  
-  useEffect(() => {
-    if (!firestore) return;
-
-    const trackDailyVisit = async () => {
-        const today = new Date().toISOString().split('T')[0];
-        const lastVisit = localStorage.getItem('lastDailyVisit');
-
-        if (lastVisit === today) {
-            return;
-        }
-
-        const dailyStatsRef = doc(firestore, 'stats', 'daily_active');
-
-        try {
-            await runTransaction(firestore, async (transaction) => {
-                const dailyStatsDoc = await transaction.get(dailyStatsRef);
-                
-                if (!dailyStatsDoc.exists() || dailyStatsDoc.data().date !== today) {
-                    transaction.set(dailyStatsRef, { count: 1, date: today });
-                } else {
-                    transaction.update(dailyStatsRef, { count: increment(1) });
-                }
-            });
-
-            localStorage.setItem('lastDailyVisit', today);
-        } catch (e) {
-            console.error("Failed to track daily visit:", e);
-        }
-    };
-
-    trackDailyVisit();
-  }, [firestore]);
 
   const handleGatekeeperConfirm = () => {
     if (!userProfileRef) return;
@@ -83,13 +109,7 @@ function MainApp() {
     });
   };
   
-  const updateCoinBalance = (newBalance: number) => {
-    if (newBalance < 0 || !userProfileRef) return;
-    updateDocumentNonBlocking(userProfileRef, { coinBalance: newBalance });
-  }
-
   const coinBalance = userProfile?.coinBalance ?? 0;
-  const totalUsers = stats?.count ?? 0;
   const isAdmin = user?.uid === 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
 
 
@@ -118,117 +138,23 @@ function MainApp() {
     return <GatekeeperModal onConfirm={handleGatekeeperConfirm} />;
   }
 
-  const renderView = () => {
-    const backButton = (
-      <Button variant="ghost" onClick={() => setView('dashboard')} className="mb-4 self-start text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300">
-        <ArrowLeft className="mr-2" />
-        Volver al Panel
-      </Button>
-    );
-
-    switch (view) {
-      case 'earn':
-        return (
-          <div className="w-full flex flex-col items-center">
-            {backButton}
-            <EarnSection coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />
-          </div>
-        );
-      case 'create':
-        return (
-          <div className="w-full flex flex-col items-center">
-            {backButton}
-            <CampaignForm coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} setView={setView} />
-          </div>
-        );
-      case 'store':
-        return (
-          <div className="w-full flex flex-col items-center">
-            {backButton}
-            <Pricing coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />
-          </div>
-        );
-      case 'admin':
-        return (
-          <div className="w-full flex flex-col items-center">
-            {backButton}
-            <AdminDashboard />
-          </div>
-        );
-      case 'flog':
-          return (
-            <div className="w-full flex flex-col items-center">
-              {backButton}
-              <FlogDashboard userProfile={userProfile} />
-            </div>
-          );
-      case 'dashboard':
-      default:
-        return (
-          <div className="w-full max-w-6xl mx-auto">
-            <MetroClock username={userProfile?.username || 'Usuario'} />
-
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8">
-              <DashboardTile
-                title="Ganar Monedas"
-                icon={Users}
-                onClick={() => setView('earn')}
-                className="bg-cyan-500 text-black col-span-2 md:col-span-2"
-                size="large"
-              />
-              <DashboardTile
-                title="Conseguir Seguidores"
-                icon={Rocket}
-                onClick={() => setView('create')}
-                className="bg-magenta-600 text-white col-span-2 md:col-span-2"
-                size="large"
-              />
-              <DashboardTile
-                title="Mi Flog"
-                icon={Camera}
-                onClick={() => setView('flog')}
-                className="bg-yellow-500 text-black"
-              />
-               <DashboardTile
-                title="Tienda"
-                icon={Store}
-                onClick={() => setView('store')}
-                className="bg-slate-700 text-white"
-              />
-              <InfoTile
-                title="Mis Monedas"
-                value={coinBalance.toLocaleString()}
-                icon={Gem}
-                className="bg-slate-800 text-cyan-400"
-              />
-              
-              {isAdmin && (
-                 <InfoTile
-                    title="Total Usuarios"
-                    value={totalUsers.toLocaleString()}
-                    icon={Users}
-                    className="bg-slate-800 text-magenta-400"
-                  />
-              )}
-               {isAdmin && (
-                  <DashboardTile
-                    title="Admin"
-                    icon={ShieldAlert}
-                    onClick={() => setView('admin')}
-                    className="bg-red-600 text-white"
-                  />
-              )}
-            </div>
-          </div>
-        );
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
-      <Header coinBalance={coinBalance} setView={setView} />
-      <main className="flex-grow container mx-auto p-4 md:p-8 flex items-center justify-center">
-        {renderView()}
+      <Header coinBalance={coinBalance} setView={() => {}} />
+      <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center">
+        {showAdmin ? (
+          <>
+            <Button variant="ghost" onClick={() => setShowAdmin(false)} className="mb-4 self-start text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300">
+                Volver al Flog
+            </Button>
+            <AdminDashboard />
+          </>
+        ) : (
+          <>
+            <FlogNav onShowAdmin={() => setShowAdmin(true)} isAdmin={isAdmin} />
+            <FlogDashboard userProfile={userProfile} />
+          </>
+        )}
       </main>
       <ChatRoom userProfile={userProfile} />
       <Footer />

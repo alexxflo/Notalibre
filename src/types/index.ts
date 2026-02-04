@@ -43,6 +43,8 @@ export interface FlogProfile {
   description: string;
   lastPhotoUpdate: Timestamp;
   themeColor: 'cyan' | 'magenta' | 'lime';
+  likes: number;
+  dislikes: number;
 }
 
 export interface FlogSignature {

@@ -212,11 +212,21 @@
         "themeColor": {
           "type": "string",
           "description": "The primary neon color for the user's Flog theme (e.g., 'cyan', 'magenta', 'lime')."
+        },
+        "likes": {
+            "type": "number",
+            "description": "The number of likes the main photo has received."
+        },
+        "dislikes": {
+            "type": "number",
+            "description": "The number of dislikes the main photo has received."
         }
       },
       "required": [
         "userId",
-        "username"
+        "username",
+        "likes",
+        "dislikes"
       ]
     },
     "FlogSignature": {

@@ -116,10 +116,9 @@ export default function Pricing({ coinBalance, updateCoinBalance }: PricingProps
 
       <div className="w-full">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold font-headline text-cyan-400 uppercase">Tienda de Monedas</h2>
           <p className="text-slate-400 mt-2 text-lg">Compra monedas para aumentar tu visibilidad y conseguir más seguidores.</p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {coinPackages.map((pkg: CoinPackage) => (
             <Card key={pkg.id} className={`flex flex-col bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl transition-all ${pkg.popular ? 'border-cyan-500 shadow-lg shadow-cyan-500/20 relative' : 'shadow-md'}`}>
               {pkg.popular && (
