@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Rocket, Users, Store, Gem, Camera, ShieldAlert, ThumbsUp, ThumbsDown, User, Bot } from 'lucide-react';
+import { Rocket, Users, Store, Gem, Camera, ShieldAlert, ThumbsUp, ThumbsDown, User, Bot, Loader2 } from 'lucide-react';
 import GatekeeperModal from '@/components/GatekeeperModal';
 import Header from '@/components/Header';
 import CampaignForm from '@/components/CampaignForm';
