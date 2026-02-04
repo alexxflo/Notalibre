@@ -12,7 +12,7 @@ import { GoogleIcon } from '../icons';
 import { useToast } from '@/hooks/use-toast';
 import VortexLogo from '../VortexLogo';
 
-const WELCOME_BONUS = 50;
+const WELCOME_BONUS = 250;
 
 export default function SignIn() {
   const auth = useAuth();

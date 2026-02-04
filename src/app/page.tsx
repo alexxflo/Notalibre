@@ -21,7 +21,7 @@ import { UserProfile } from '@/types';
 
 export type View = 'home' | 'earn' | 'create' | 'store' | 'admin';
 
-const WELCOME_BONUS = 50;
+const WELCOME_BONUS = 250;
 
 function MainApp() {
   const [view, setView] = useState<View>('home');
