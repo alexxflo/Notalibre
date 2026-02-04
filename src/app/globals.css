@@ -39,3 +39,9 @@
     background-image: linear-gradient(to bottom right, #020617, #000000);
   }
 }
+
+@layer components {
+  main.flog-feed-active {
+    @apply p-4 pt-8 md:p-8;
+  }
+}

@@ -87,15 +87,21 @@ export default function FlogFeed({ userProfile, setView }: { userProfile: UserPr
     }, [flogs, user, userProfile]);
 
     useEffect(() => {
-      if (!isLoading && filteredFlogs && filteredFlogs.length === 0) {
-        toast({
-            title: "¡Estás al día!",
-            description: "No hay nuevos Flogs para mostrar. Vuelve más tarde.",
-        });
-        setView('panel');
-      }
-    }, [isLoading, filteredFlogs, setView, toast]);
-
+        // Add flog-mode class to body when this component mounts for the feed
+        document.body.classList.add('flog-mode');
+        const mainContainer = document.querySelector('main');
+        if (mainContainer) {
+            mainContainer.classList.add('flog-feed-active');
+        }
+        
+        // Remove it when the component unmounts
+        return () => {
+          document.body.classList.remove('flog-mode');
+           if (mainContainer) {
+            mainContainer.classList.remove('flog-feed-active');
+        }
+        };
+      }, []);
 
     const markAsInteracted = useCallback((flogId: string) => {
         if (!user) return;
@@ -187,8 +193,16 @@ export default function FlogFeed({ userProfile, setView }: { userProfile: UserPr
     }
     
     if (!filteredFlogs || filteredFlogs.length === 0) {
-        // This view is shown briefly before the useEffect hook redirects. A loader is appropriate.
-        return <Loader2 className="h-16 w-16 animate-spin text-cyan-400 my-16 mx-auto" />;
+        return (
+            <div className="text-center text-slate-400 py-16 px-6 flog-panel flog-theme-border flog-theme-cyan rounded-lg">
+                <h2 className="flog-panel-title flog-theme-color flog-theme-text-shadow text-2xl">¡Estás al día!</h2>
+                <p className="mt-4">No hay nuevos Flogs para mostrar en este momento.</p>
+                <p className='mt-1'>Vuelve más tarde o crea una campaña para que otros te descubran.</p>
+                <Button onClick={() => setView('panel')} className="flog-button mt-6">
+                    Ir al Panel
+                </Button>
+            </div>
+        );
     }
 
     return (
