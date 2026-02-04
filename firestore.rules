@@ -96,15 +96,12 @@ service cloud.firestore {
       // A user can write to their own flog profile
       allow write: if request.auth.uid == userId;
       
-      // Any other authenticated user can update ONLY the counter fields by ensuring
-      // that all other core profile fields remain unchanged.
+      // This rule allows non-owners to update ONLY the counter fields.
+      // It inspects the incoming request and ensures it only contains keys
+      // for the allowed counter fields. This is the robust way to handle
+      // partial, secure updates like increments.
       allow update: if request.auth != null && request.auth.uid != userId &&
-                      request.resource.data.userId == resource.data.userId &&
-                      request.resource.data.username == resource.data.username &&
-                      request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl &&
-                      request.resource.data.description == resource.data.description &&
-                      request.resource.data.themeColor == resource.data.themeColor &&
-                      request.resource.data.lastPhotoUpdate == resource.data.lastPhotoUpdate;
+                      request.resource.data.keys().hasOnly(['likes', 'dislikes', 'followerCount']);
     }
     
     match /flogs/{userId}/signatures/{signatureId} {
