@@ -84,14 +84,14 @@ service cloud.firestore {
       allow update: if request.auth.uid == userId;
       
       // Any other authenticated user can update ONLY the counter fields by ensuring
-      // that no other core profile fields are part of the update request.
+      // that all other core profile fields remain unchanged.
       allow update: if request.auth != null && request.auth.uid != userId &&
-                      !('userId' in request.resource.data) &&
-                      !('username' in request.resource.data) &&
-                      !('mainPhotoUrl' in request.resource.data) &&
-                      !('description' in request.resource.data) &&
-                      !('lastPhotoUpdate' in request.resource.data) &&
-                      !('themeColor' in request.resource.data);
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.username == resource.data.username &&
+                      request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl &&
+                      request.resource.data.description == resource.data.description &&
+                      request.resource.data.lastPhotoUpdate == resource.data.lastPhotoUpdate &&
+                      request.resource.data.themeColor == resource.data.themeColor;
     }
     
     match /flogs/{userId}/signatures/{signatureId} {
