@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Rocket, Users, Loader2, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Rocket, Users, Loader2, ShieldAlert, Store, Gem } from 'lucide-react';
 import GatekeeperModal from '@/components/GatekeeperModal';
 import Header from '@/components/Header';
 import CampaignForm from '@/components/CampaignForm';
@@ -14,17 +14,20 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, runTransaction, increment } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import SignIn from '@/components/auth/SignIn';
-import WatchAdCard from '@/components/WatchAdCard';
 import AdminDashboard from '@/components/AdminDashboard';
 import ChatRoom from '@/components/ChatRoom';
 import { UserProfile } from '@/types';
+import MetroClock from '@/components/MetroClock';
+import DashboardTile from '@/components/DashboardTile';
+import InfoTile from '@/components/InfoTile';
+import './metro.css';
 
-export type View = 'home' | 'earn' | 'create' | 'store' | 'admin';
+export type View = 'dashboard' | 'earn' | 'create' | 'store' | 'admin';
 
 const WELCOME_BONUS = 250;
 
 function MainApp() {
-  const [view, setView] = useState<View>('home');
+  const [view, setView] = useState<View>('dashboard');
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -33,7 +36,10 @@ function MainApp() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
+  const statsRef = useMemoFirebase(() => doc(firestore, 'stats', 'users'), [firestore]);
+
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const { data: stats, isLoading: isStatsLoading } = useDoc(statsRef);
   
   useEffect(() => {
     if (!firestore) return;
@@ -43,7 +49,7 @@ function MainApp() {
         const lastVisit = localStorage.getItem('lastDailyVisit');
 
         if (lastVisit === today) {
-            return; // Already tracked today
+            return;
         }
 
         const dailyStatsRef = doc(firestore, 'stats', 'daily_active');
@@ -53,10 +59,8 @@ function MainApp() {
                 const dailyStatsDoc = await transaction.get(dailyStatsRef);
                 
                 if (!dailyStatsDoc.exists() || dailyStatsDoc.data().date !== today) {
-                    // New day or first ever visit, reset counter
                     transaction.set(dailyStatsRef, { count: 1, date: today });
                 } else {
-                    // Same day, increment counter
                     transaction.update(dailyStatsRef, { count: increment(1) });
                 }
             });
@@ -84,6 +88,9 @@ function MainApp() {
   }
 
   const coinBalance = userProfile?.coinBalance ?? 0;
+  const totalUsers = stats?.count ?? 0;
+  const isAdmin = user?.uid === 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
+
 
   if (isProfileLoading) {
     return (
@@ -112,9 +119,9 @@ function MainApp() {
 
   const renderView = () => {
     const backButton = (
-      <Button variant="ghost" onClick={() => setView('home')} className="mb-4 self-start text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300">
+      <Button variant="ghost" onClick={() => setView('dashboard')} className="mb-4 self-start text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300">
         <ArrowLeft className="mr-2" />
-        Volver al Inicio
+        Volver al Panel
       </Button>
     );
 
@@ -147,44 +154,57 @@ function MainApp() {
             <AdminDashboard />
           </div>
         );
-      case 'home':
+      case 'dashboard':
       default:
         return (
-          <div className="text-center">
-            <h2 className="text-3xl md:text-5xl font-bold font-headline mb-4 uppercase tracking-wider text-white">IMPULSA TU CRECIMIENTO SOCIAL</h2>
-            <p className="text-slate-400 mb-8 md:mb-12 text-lg max-w-2xl mx-auto">Elige una opción para empezar a interactuar con la comunidad y hacer crecer tu perfil.</p>
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <div 
-                className="p-8 bg-slate-900/50 border-2 border-cyan-500/30 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center text-center hover:bg-cyan-900/20 hover:border-cyan-500/70 transition-all cursor-pointer shadow-lg shadow-cyan-500/10"
+          <div className="w-full max-w-6xl mx-auto">
+            <MetroClock username={userProfile?.username || 'Usuario'} />
+
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8">
+              <DashboardTile
+                title="Ganar Monedas"
+                icon={Users}
                 onClick={() => setView('earn')}
-              >
-                <Users className="h-16 w-16 text-cyan-400 mb-4" />
-                <h3 className="font-headline text-2xl font-bold mb-2 uppercase text-white">Ganar Monedas 💰</h3>
-                <p className="text-slate-400 mb-6">Sigue a otros usuarios y completa tareas para obtener monedas gratis.</p>
-                <Button size="lg" className="w-full font-headline uppercase bg-cyan-500 text-black hover:bg-cyan-400 shadow-[0_0_15px_hsl(var(--primary))] hover:shadow-[0_0_25px_hsl(var(--primary))] transition-shadow">Empezar a Ganar</Button>
-              </div>
-              <div 
-                className="p-8 bg-slate-900/50 border-2 border-slate-700 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center text-center hover:bg-slate-800/50 hover:border-slate-500 transition-all cursor-pointer shadow-lg"
+                className="bg-cyan-500 text-black col-span-2 md:col-span-2"
+                size="large"
+              />
+              <DashboardTile
+                title="Conseguir Seguidores"
+                icon={Rocket}
                 onClick={() => setView('create')}
-              >
-                <Rocket className="h-16 w-16 text-slate-300 mb-4" />
-                <h3 className="font-headline text-2xl font-bold mb-2 uppercase text-white">Conseguir Seguidores 🚀</h3>
-                <p className="text-slate-400 mb-6">Lanza una campaña para que otros usuarios te sigan y aumenta tu audiencia.</p>
-                <Button size="lg" variant="secondary" className="w-full font-headline uppercase bg-magenta-600 text-white hover:bg-magenta-500 shadow-[0_0_15px_hsl(var(--secondary))] hover:shadow-[0_0_25px_hsl(var(--secondary))] transition-shadow">Crear Campaña</Button>
-              </div>
-            </div>
-            <div className="mt-12 w-full max-w-4xl mx-auto">
-              <div className="relative py-4">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-slate-700/50"></span>
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-slate-900 px-4 text-sm text-slate-400 backdrop-blur-sm">O gana monedas extra</span>
-                </div>
-              </div>
-              <div className="mt-4">
-                <WatchAdCard coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />
-              </div>
+                className="bg-magenta-600 text-white col-span-2 md:col-span-2"
+                size="large"
+              />
+              <DashboardTile
+                title="Tienda"
+                icon={Store}
+                onClick={() => setView('store')}
+                className="bg-slate-700 text-white"
+              />
+
+              <InfoTile
+                title="Mis Monedas"
+                value={coinBalance.toLocaleString()}
+                icon={Gem}
+                className="bg-slate-800 text-cyan-400"
+              />
+              
+              {isAdmin && (
+                 <InfoTile
+                    title="Total Usuarios"
+                    value={totalUsers.toLocaleString()}
+                    icon={Users}
+                    className="bg-slate-800 text-magenta-400"
+                  />
+              )}
+               {isAdmin && (
+                  <DashboardTile
+                    title="Admin"
+                    icon={ShieldAlert}
+                    onClick={() => setView('admin')}
+                    className="bg-red-600 text-white"
+                  />
+              )}
             </div>
           </div>
         );

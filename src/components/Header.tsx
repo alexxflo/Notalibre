@@ -1,6 +1,6 @@
 import { Button } from './ui/button';
 import CoinBalance from './CoinBalance';
-import { Gem, Users, Shield } from 'lucide-react';
+import { Gem, Users, Shield, LayoutDashboard } from 'lucide-react';
 import { View } from '@/app/page';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import UserMenu from './auth/UserMenu';
@@ -15,31 +15,6 @@ type HeaderProps = {
 
 const ADMIN_UID = 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
 
-function UserCounter() {
-  const { user } = useUser();
-  const firestore = useFirestore();
-  const statsRef = useMemoFirebase(() => doc(firestore, 'stats', 'users'), [firestore]);
-  const { data: stats, isLoading } = useDoc(statsRef);
-
-  if (user?.uid !== ADMIN_UID) {
-    return null;
-  }
-
-  if (isLoading) {
-    return <Skeleton className="h-6 w-24 bg-slate-700" />;
-  }
-
-  const count = stats?.count ?? 0;
-
-  return (
-    <div className="flex items-center gap-2 text-slate-400">
-      <Users className="h-5 w-5 text-cyan-400" />
-      <span className="font-semibold text-white">{count.toLocaleString()}</span>
-      <span className="hidden sm:inline text-sm">Usuarios</span>
-    </div>
-  );
-}
-
 export default function Header({ coinBalance, setView }: HeaderProps) {
   const { user, isUserLoading } = useUser();
 
@@ -47,13 +22,13 @@ export default function Header({ coinBalance, setView }: HeaderProps) {
     <header className="bg-slate-900/50 backdrop-blur-lg sticky top-0 z-40 border-b border-slate-700/50">
       <div className="container mx-auto flex justify-between items-center p-4 gap-2">
         <div className="flex-none">
-            <div onClick={() => setView('home')} className="cursor-pointer">
+            <div onClick={() => setView('dashboard')} className="cursor-pointer">
                 <VortexLogo className="relative w-36 md:w-48 h-auto" />
             </div>
         </div>
 
         <div className="flex-1 flex justify-center">
-          <UserCounter />
+            {/* Can add elements here later */}
         </div>
 
         <div className="flex-none">
@@ -62,16 +37,16 @@ export default function Header({ coinBalance, setView }: HeaderProps) {
                 <Skeleton className="h-10 w-24 rounded-full bg-slate-700" />
             ) : (
                 <>
+                <Button variant="ghost" size="sm" onClick={() => setView('dashboard')} className="text-slate-300 hover:bg-slate-800/50 hover:text-white uppercase shrink-0 p-2 md:px-3">
+                    <LayoutDashboard className="h-4 w-4 md:mr-2"/>
+                    <span className="hidden md:inline">Panel</span>
+                </Button>
                 {user?.uid === ADMIN_UID && (
                   <Button variant="outline" size="sm" onClick={() => setView('admin')} className="border-red-500 text-red-400 hover:bg-red-900/50 hover:text-red-300 uppercase shrink-0 p-2 md:px-3">
                     <Shield className="h-4 w-4 md:mr-2"/>
                     <span className="hidden md:inline">Admin</span>
                   </Button>
                 )}
-                <Button variant="outline" size="sm" onClick={() => setView('store')} className="border-cyan-400 text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300 uppercase shrink-0 p-2 md:px-3">
-                    <Gem className="h-4 w-4 md:mr-2"/>
-                    <span className="hidden md:inline">Comprar Monedas</span>
-                </Button>
                 <CoinBalance balance={coinBalance} />
                 <UserMenu />
                 </>
