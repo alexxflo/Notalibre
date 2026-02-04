@@ -83,15 +83,11 @@ service cloud.firestore {
       // The owner can update any field on their OWN profile
       allow update: if request.auth.uid == userId;
       
-      // Any other authenticated user can update ONLY the counter fields by ensuring
-      // that all other fields remain unchanged.
+      // Any other authenticated user can update ONLY the counter fields.
+      // This uses diff() to ensure no other fields are being changed.
       allow update: if request.auth != null && request.auth.uid != userId &&
-                      request.resource.data.userId == resource.data.userId &&
-                      request.resource.data.username == resource.data.username &&
-                      request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl &&
-                      request.resource.data.description == resource.data.description &&
-                      request.resource.data.lastPhotoUpdate == resource.data.lastPhotoUpdate &&
-                      request.resource.data.themeColor == resource.data.themeColor;
+                      request.resource.data.diff(resource.data).affectedKeys().hasAny(['likes', 'dislikes', 'followerCount']) &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'dislikes', 'followerCount']);
     }
     
     match /flogs/{userId}/signatures/{signatureId} {
