@@ -26,10 +26,10 @@ const WELCOME_BONUS = 250;
 
 function DashboardPanel({ onShowAdmin, isAdmin, coinBalance, updateCoinBalance }: { onShowAdmin: () => void; isAdmin: boolean, coinBalance: number, updateCoinBalance: (nb: number) => void }) {
   return (
-    <div className="bg-slate-900/70 backdrop-blur-md p-4 rounded-lg border border-slate-700 flex items-center justify-center flex-wrap gap-2 md:gap-4 mb-6">
+    <div className="bg-slate-900/70 backdrop-blur-md p-6 rounded-lg border border-slate-700 flex flex-col md:flex-row items-center justify-center flex-wrap gap-4 mb-6">
       <Sheet>
         <SheetTrigger asChild>
-          <Button className="font-headline uppercase bg-cyan-500 text-black hover:bg-cyan-400 shadow-[0_0_15px_hsl(var(--primary)/0.5)]">
+          <Button size="lg" className="font-headline uppercase bg-cyan-500 text-black hover:bg-cyan-400 shadow-[0_0_15px_hsl(var(--primary)/0.5)] w-full md:w-auto">
             <Users className="mr-2" /> Ganar Monedas
           </Button>
         </SheetTrigger>
@@ -45,7 +45,7 @@ function DashboardPanel({ onShowAdmin, isAdmin, coinBalance, updateCoinBalance }
 
       <Sheet>
         <SheetTrigger asChild>
-          <Button className="font-headline uppercase bg-magenta-600 text-white hover:bg-magenta-500 shadow-[0_0_15px_hsl(var(--secondary)/0.5)]">
+          <Button size="lg" className="font-headline uppercase bg-magenta-600 text-white hover:bg-magenta-500 shadow-[0_0_15px_hsl(var(--secondary)/0.5)] w-full md:w-auto">
             <Rocket className="mr-2" /> Crear Campaña
           </Button>
         </SheetTrigger>
@@ -61,7 +61,7 @@ function DashboardPanel({ onShowAdmin, isAdmin, coinBalance, updateCoinBalance }
 
       <Sheet>
         <SheetTrigger asChild>
-          <Button variant="outline" className="font-headline uppercase border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white">
+          <Button size="lg" variant="outline" className="font-headline uppercase border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white w-full md:w-auto">
             <Store className="mr-2" /> Tienda
           </Button>
         </SheetTrigger>
@@ -76,7 +76,7 @@ function DashboardPanel({ onShowAdmin, isAdmin, coinBalance, updateCoinBalance }
       </Sheet>
 
       {isAdmin && (
-          <Button onClick={onShowAdmin} variant="destructive" className="font-headline uppercase">
+          <Button size="lg" onClick={onShowAdmin} variant="destructive" className="font-headline uppercase w-full md:w-auto">
             <ShieldAlert className="mr-2" /> Admin
           </Button>
       )}
