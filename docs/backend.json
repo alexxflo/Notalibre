@@ -30,6 +30,13 @@
         "isBlocked": {
           "type": "boolean",
           "description": "Whether the user is blocked from using the application."
+        },
+        "interactedFlogIds": {
+            "type": "array",
+            "description": "An array of Flog user IDs that this user has already interacted with (liked or disliked).",
+            "items": {
+                "type": "string"
+            }
         }
       },
       "required": [

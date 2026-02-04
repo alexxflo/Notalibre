@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Rocket, Users, Store, Gem, ShieldAlert, ThumbsUp, ThumbsDown, User, Bot, Loader2 } from 'lucide-react';
+import { Rocket, Users, Store, Gem, ShieldAlert, ThumbsUp, ThumbsDown, User, Bot, Loader2, LayoutDashboard, Camera } from 'lucide-react';
 import GatekeeperModal from '@/components/GatekeeperModal';
 import Header from '@/components/Header';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -156,7 +156,7 @@ function MainApp() {
         
         {view === 'flog' && <FlogDashboard userProfile={userProfile} />}
 
-        {view === 'feed' && <FlogFeed userProfile={userProfile} />}
+        {view === 'feed' && <FlogFeed userProfile={userProfile} setView={setView} />}
       </main>
       <ChatRoom userProfile={userProfile} />
       <Footer />

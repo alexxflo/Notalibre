@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import useEmblaCarousel from 'embla-carousel-react';
 import { FlogProfile, UserProfile } from '@/types';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, doc, increment, serverTimestamp } from 'firebase/firestore';
+import { collection, query, doc, increment, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Loader2, ThumbsUp, ThumbsDown, X, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-
 
 const FlogCard = ({ flog, onDislike, onLike }: { flog: FlogProfile, onDislike: () => void, onLike: () => void }) => {
     return (
@@ -57,10 +56,10 @@ const FlogCard = ({ flog, onDislike, onLike }: { flog: FlogProfile, onDislike: (
 };
 
 
-export default function FlogFeed({ userProfile }: { userProfile: UserProfile }) {
+export default function FlogFeed({ userProfile, setView }: { userProfile: UserProfile, setView: (view: any) => void }) {
     const { user } = useUser();
     const firestore = useFirestore();
-    const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+    const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false }); // Loop should be false for a finite list
     const { toast } = useToast();
 
     const [isSignDialogOpen, setIsSignDialogOpen] = useState(false);
@@ -74,29 +73,45 @@ export default function FlogFeed({ userProfile }: { userProfile: UserProfile }) 
 
     const { data: flogs, isLoading } = useCollection<FlogProfile>(flogsQuery);
 
-    const filteredFlogs = flogs?.filter(flog => flog.userId !== user?.uid);
+    const filteredFlogs = useMemo(() => {
+        if (!flogs || !user) return [];
+        const interactedIds = new Set(userProfile.interactedFlogIds || []);
+        return flogs.filter(flog => flog.userId !== user.uid && !interactedIds.has(flog.id));
+    }, [flogs, user, userProfile]);
+
+    useEffect(() => {
+      if (!isLoading && filteredFlogs && filteredFlogs.length === 0) {
+        toast({
+            title: "¡Estás al día!",
+            description: "No hay nuevos Flogs para mostrar. Vuelve más tarde.",
+        });
+        setView('panel');
+      }
+    }, [isLoading, filteredFlogs, setView, toast]);
+
+
+    const markAsInteracted = useCallback((flogId: string) => {
+        if (!user) return;
+        const userDocRef = doc(firestore, 'users', user.uid);
+        updateDocumentNonBlocking(userDocRef, {
+            interactedFlogIds: arrayUnion(flogId)
+        });
+    }, [user, firestore]);
 
     const handleDislike = useCallback((flog: FlogProfile) => {
         if (!user) return;
-         if(flog.userId === user.uid) {
-            toast({ variant: 'destructive', description: "No puedes interactuar con tu propio flog." });
-            return;
-        }
         const flogDocRef = doc(firestore, 'flogs', flog.id);
         updateDocumentNonBlocking(flogDocRef, { dislikes: increment(1) });
+        markAsInteracted(flog.id);
         toast({ description: `Le diste "No me gusta" a ${flog.username}.` });
         emblaApi?.scrollNext();
-    }, [firestore, user, emblaApi, toast]);
+    }, [firestore, user, emblaApi, toast, markAsInteracted]);
 
     const handleLikeClick = useCallback((flog: FlogProfile) => {
         if (!user) return;
-        if(flog.userId === user.uid) {
-            toast({ variant: 'destructive', description: "No puedes interactuar con tu propio flog." });
-            return;
-        }
         setSelectedFlog(flog);
         setIsSignDialogOpen(true);
-    }, [user, toast]);
+    }, [user]);
 
     const handleConfirmLikeAndSignature = useCallback(() => {
         if (!selectedFlog || !user || !userProfile) return;
@@ -117,13 +132,15 @@ export default function FlogFeed({ userProfile }: { userProfile: UserProfile }) 
         } else {
              toast({ description: `¡Like enviado a ${selectedFlog.username}!` });
         }
+        
+        markAsInteracted(selectedFlog.id);
        
         setNewSignature('');
         setIsSignDialogOpen(false);
         setSelectedFlog(null);
         emblaApi?.scrollNext();
 
-    }, [selectedFlog, newSignature, user, userProfile, firestore, toast, emblaApi]);
+    }, [selectedFlog, newSignature, user, userProfile, firestore, toast, emblaApi, markAsInteracted]);
 
 
     if (isLoading) {
@@ -131,12 +148,8 @@ export default function FlogFeed({ userProfile }: { userProfile: UserProfile }) 
     }
     
     if (!filteredFlogs || filteredFlogs.length === 0) {
-        return (
-            <div className="text-center my-16 text-white p-8 flog-panel flog-theme-border">
-                <p className="font-bold text-lg">No hay otros Flogs para mostrar</p>
-                <p>Parece que eres el primero aquí. ¡Edita tu Flog para que otros te vean!</p>
-            </div>
-        );
+        // This view is shown briefly before the useEffect hook redirects. A loader is appropriate.
+        return <Loader2 className="h-16 w-16 animate-spin text-cyan-400 my-16 mx-auto" />;
     }
 
     return (

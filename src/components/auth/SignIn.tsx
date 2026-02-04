@@ -39,6 +39,7 @@ export default function SignIn() {
           coinBalance: WELCOME_BONUS,
           gatekeeperPassed: false,
           isBlocked: false,
+          interactedFlogIds: [],
         };
         // Use non-blocking call. Error will be handled globally.
         setDocumentNonBlocking(userDocRef, newUserProfile, {});

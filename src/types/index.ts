@@ -19,6 +19,7 @@ export interface UserProfile {
   coinBalance: number;
   gatekeeperPassed: boolean;
   isBlocked?: boolean;
+  interactedFlogIds?: string[];
 }
 
 export interface DailyStats {
