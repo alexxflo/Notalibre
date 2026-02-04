@@ -10,7 +10,7 @@ service cloud.firestore {
     // --- User Collection/Document Rules ---
     match /users/{userId} {
       // Allow any authenticated user to list users for the F/F feature.
-      allow list, get: if request.auth != null;
+      allow list: if request.auth != null;
       
       // Admin can get any user profile and write to it.
       allow write: if isAdmin();
@@ -103,7 +103,8 @@ service cloud.firestore {
                       request.resource.data.username == resource.data.username &&
                       request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl &&
                       request.resource.data.description == resource.data.description &&
-                      request.resource.data.themeColor == resource.data.themeColor;
+                      request.resource.data.themeColor == resource.data.themeColor &&
+                      request.resource.data.lastPhotoUpdate == resource.data.lastPhotoUpdate;
     }
     
     match /flogs/{userId}/signatures/{signatureId} {
