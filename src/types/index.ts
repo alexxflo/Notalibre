@@ -10,3 +10,13 @@ export interface Campaign {
   avatarUrl: string;
   createdAt: Timestamp;
 }
+
+export interface UserProfile {
+  id: string; // Firestore document ID
+  username: string;
+  email: string;
+  avatarUrl: string;
+  coinBalance: number;
+  gatekeeperPassed: boolean;
+  isBlocked?: boolean;
+}

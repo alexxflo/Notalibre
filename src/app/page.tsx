@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Rocket, Users, Loader2 } from 'lucide-react';
+import { ArrowLeft, Rocket, Users, Loader2, ShieldAlert } from 'lucide-react';
 import GatekeeperModal from '@/components/GatekeeperModal';
 import Header from '@/components/Header';
 import CampaignForm from '@/components/CampaignForm';
@@ -16,8 +16,10 @@ import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import SignIn from '@/components/auth/SignIn';
 import WatchAdCard from '@/components/WatchAdCard';
 import ActivityFeed from '@/components/ActivityFeed';
+import AdminDashboard from '@/components/AdminDashboard';
+import { UserProfile } from '@/types';
 
-export type View = 'home' | 'earn' | 'create' | 'store';
+export type View = 'home' | 'earn' | 'create' | 'store' | 'admin';
 
 const WELCOME_BONUS = 50;
 
@@ -31,7 +33,7 @@ function MainApp() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const handleGatekeeperConfirm = () => {
     if (!userProfileRef) return;
@@ -52,6 +54,19 @@ function MainApp() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Loader2 className="h-16 w-16 animate-spin text-cyan-400" />
+      </div>
+    );
+  }
+
+  if (userProfile?.isBlocked) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white p-4">
+        <div className="text-center p-8 bg-slate-800/50 border border-red-500/50 rounded-2xl">
+          <ShieldAlert className="mx-auto h-16 w-16 text-red-500" />
+          <h1 className="mt-6 text-3xl font-bold text-red-400 font-headline">Cuenta Bloqueada</h1>
+          <p className="mt-2 text-slate-400">Tu cuenta ha sido bloqueada por un administrador.</p>
+          <p className="text-sm text-slate-500">Contacta a soporte para más información.</p>
+        </div>
       </div>
     );
   }
@@ -88,6 +103,13 @@ function MainApp() {
           <div className="w-full flex flex-col items-center">
             {backButton}
             <Pricing coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />
+          </div>
+        );
+      case 'admin':
+        return (
+          <div className="w-full flex flex-col items-center">
+            {backButton}
+            <AdminDashboard />
           </div>
         );
       case 'home':

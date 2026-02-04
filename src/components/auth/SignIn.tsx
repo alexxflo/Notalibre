@@ -37,6 +37,7 @@ export default function SignIn() {
           avatarUrl: user.photoURL || `https://unavatar.io/${user.email}`,
           coinBalance: WELCOME_BONUS,
           gatekeeperPassed: false,
+          isBlocked: false,
         };
         // We use setDoc here because it's a one-time critical creation.
         await setDoc(userDocRef, newUserProfile);

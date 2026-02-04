@@ -1,6 +1,6 @@
 import { Button } from './ui/button';
 import CoinBalance from './CoinBalance';
-import { Gem, Users } from 'lucide-react';
+import { Gem, Users, Shield } from 'lucide-react';
 import { View } from '@/app/page';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import UserMenu from './auth/UserMenu';
@@ -13,15 +13,14 @@ type HeaderProps = {
   setView: (view: View) => void;
 };
 
+const ADMIN_UID = 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
+
 function UserCounter() {
-  // IMPORTANT: This counter is now only visible to the admin user.
-  const ADMIN_UID = 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
-  const { user } = useUser(); // Get the current user
+  const { user } = useUser();
   const firestore = useFirestore();
   const statsRef = useMemoFirebase(() => doc(firestore, 'stats', 'users'), [firestore]);
   const { data: stats, isLoading } = useDoc(statsRef);
 
-  // Only render the counter if the logged-in user is the admin
   if (user?.uid !== ADMIN_UID) {
     return null;
   }
@@ -38,12 +37,11 @@ function UserCounter() {
       <span className="font-semibold text-white">{count.toLocaleString()}</span>
       <span className="hidden sm:inline text-sm">Usuarios</span>
     </div>
-  )
+  );
 }
 
-
 export default function Header({ coinBalance, setView }: HeaderProps) {
-  const { isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
 
   return (
     <header className="bg-slate-900/50 backdrop-blur-lg sticky top-0 z-40 border-b border-slate-700/50">
@@ -64,6 +62,12 @@ export default function Header({ coinBalance, setView }: HeaderProps) {
                 <Skeleton className="h-10 w-24 rounded-full bg-slate-700" />
             ) : (
                 <>
+                {user?.uid === ADMIN_UID && (
+                  <Button variant="outline" size="sm" onClick={() => setView('admin')} className="border-red-500 text-red-400 hover:bg-red-900/50 hover:text-red-300 uppercase shrink-0 p-2 md:px-3">
+                    <Shield className="h-4 w-4 md:mr-2"/>
+                    <span className="hidden md:inline">Admin</span>
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={() => setView('store')} className="border-cyan-400 text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300 uppercase shrink-0 p-2 md:px-3">
                     <Gem className="h-4 w-4 md:mr-2"/>
                     <span className="hidden md:inline">Comprar Monedas</span>

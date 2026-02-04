@@ -1,10 +1,18 @@
 rules_version = '2';
+
+function isAdmin() {
+  return request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
+}
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- User-specific rules ---
+    // --- User Collection/Document Rules ---
     match /users/{userId} {
-      // A user can read and write to their own profile
+      // Admin can do anything to any user profile
+      allow read, write: if isAdmin();
+
+      // A user can read and write to their own profile (but not others)
       allow read, write: if request.auth.uid == userId;
 
       // The unauthenticated bot can read any user profile for processing
@@ -18,6 +26,11 @@ service cloud.firestore {
                     && request.resource.data.gatekeeperPassed == resource.data.gatekeeperPassed;
     }
     
+    // This rule allows the admin to list the entire collection.
+    match /users {
+      allow list: if isAdmin();
+    }
+
     // --- Campaign Rules ---
     match /campaigns/{campaignId} {
         // Any logged-in user can read campaigns
@@ -47,7 +60,6 @@ service cloud.firestore {
       // Any authenticated user can read stats
       allow read: if request.auth != null;
       // Allow the client to increment the user count upon sign-up.
-      // This is more secure than `allow write` as it prevents deletion.
       allow create, update: if request.auth != null;
     }
   }
