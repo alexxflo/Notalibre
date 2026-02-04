@@ -74,17 +74,24 @@ service cloud.firestore {
       // Any authenticated user can read any flog profile
       allow read: if request.auth != null;
       
-      // A user can create or delete their OWN flog profile
-      allow create, delete: if request.auth.uid == userId;
+      // A user can create their OWN flog profile
+      allow create: if request.auth.uid == userId;
+
+      // A user can delete their OWN flog profile
+      allow delete: if request.auth.uid == userId;
       
       // The owner can update any field on their OWN profile
       allow update: if request.auth.uid == userId;
       
-      // Any other authenticated user can update ONLY the likes, dislikes, and followerCount fields
-      allow update: if request.auth != null
-                    && request.auth.uid != userId
-                    && request.resource.data.diff(resource.data).affectedKeys()
-                       .hasOnly(['likes', 'dislikes', 'followerCount']);
+      // Any other authenticated user can update ONLY the counter fields by ensuring
+      // that all other fields remain unchanged.
+      allow update: if request.auth != null && request.auth.uid != userId &&
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.username == resource.data.username &&
+                      request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl &&
+                      request.resource.data.description == resource.data.description &&
+                      request.resource.data.lastPhotoUpdate == resource.data.lastPhotoUpdate &&
+                      request.resource.data.themeColor == resource.data.themeColor;
     }
     
     match /flogs/{userId}/signatures/{signatureId} {
