@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { UserProfile, FlogProfile } from '@/types';
-import { doc } from 'firebase/firestore';
+import { doc, Timestamp } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Loader2 } from 'lucide-react';
 import PhotoManager from './PhotoManager';
@@ -31,12 +31,12 @@ export default function FlogDashboard({ userProfile }: FlogDashboardProps) {
     const initializeFlog = () => {
       if (!isFlogLoading && !flogProfile && user && userProfile && flogProfileRef) {
         setIsInitializing(true);
-        const newFlogProfile: Partial<FlogProfile> = {
+        const newFlogProfile: Omit<FlogProfile, 'id'> = {
           userId: user.uid,
           username: userProfile.username,
           mainPhotoUrl: 'https://placehold.co/800x600/000000/00ffff/png?text=VORTEX',
           description: '¡Bienvenido a mi Flog! Deja tu firma.',
-          lastPhotoUpdate: new Date(0) as any, // Set to epoch to allow immediate update
+          lastPhotoUpdate: Timestamp.fromDate(new Date(0)), // Set to epoch to allow immediate update
           themeColor: 'cyan',
           likes: 0,
           dislikes: 0,
