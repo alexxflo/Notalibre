@@ -23,9 +23,9 @@ import './flog.css';
 
 const WELCOME_BONUS = 250;
 
-function FlogNav({ onShowAdmin, isAdmin }: { onShowAdmin: () => void; isAdmin: boolean }) {
+function DashboardPanel({ onShowAdmin, isAdmin, coinBalance, updateCoinBalance }: { onShowAdmin: () => void; isAdmin: boolean, coinBalance: number, updateCoinBalance: (nb: number) => void }) {
   return (
-    <div className="bg-slate-900/70 backdrop-blur-md p-4 rounded-lg border border-slate-700 flex items-center justify-center gap-2 md:gap-4 mb-6">
+    <div className="bg-slate-900/70 backdrop-blur-md p-4 rounded-lg border border-slate-700 flex items-center justify-center flex-wrap gap-2 md:gap-4 mb-6">
       <Sheet>
         <SheetTrigger asChild>
           <Button className="font-headline uppercase bg-cyan-500 text-black hover:bg-cyan-400 shadow-[0_0_15px_hsl(var(--primary)/0.5)]">
@@ -36,9 +36,8 @@ function FlogNav({ onShowAdmin, isAdmin }: { onShowAdmin: () => void; isAdmin: b
           <SheetHeader>
             <SheetTitle className="text-cyan-400 font-headline text-2xl">Gana Monedas</SheetTitle>
           </SheetHeader>
-          {/* This inner div is needed for scrolling within the sheet */}
           <div className="mt-4 h-[calc(100%-4rem)] overflow-y-auto">
-            <EarnSection coinBalance={0} updateCoinBalance={() => {}} />
+            <EarnSection coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />
           </div>
         </SheetContent>
       </Sheet>
@@ -54,7 +53,7 @@ function FlogNav({ onShowAdmin, isAdmin }: { onShowAdmin: () => void; isAdmin: b
             <SheetTitle className="text-magenta-400 font-headline text-2xl">Crear Campaña</SheetTitle>
           </SheetHeader>
           <div className="mt-4 h-[calc(100%-4rem)] overflow-y-auto">
-            <CampaignForm coinBalance={0} updateCoinBalance={() => {}} setView={() => {}} />
+            <CampaignForm coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} setView={() => {}} />
           </div>
         </SheetContent>
       </Sheet>
@@ -70,19 +69,15 @@ function FlogNav({ onShowAdmin, isAdmin }: { onShowAdmin: () => void; isAdmin: b
             <SheetTitle className="text-cyan-400 font-headline text-2xl">Tienda de Monedas</SheetTitle>
           </SheetHeader>
           <div className="mt-4 h-[calc(100%-4rem)] overflow-y-auto">
-            <Pricing coinBalance={0} updateCoinBalance={() => {}} />
+            <Pricing coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />
           </div>
         </SheetContent>
       </Sheet>
 
       {isAdmin && (
-         <Sheet>
-          <SheetTrigger asChild>
-              <Button onClick={onShowAdmin} variant="destructive" className="font-headline uppercase">
-                <ShieldAlert className="mr-2" /> Admin
-              </Button>
-          </SheetTrigger>
-        </Sheet>
+          <Button onClick={onShowAdmin} variant="destructive" className="font-headline uppercase">
+            <ShieldAlert className="mr-2" /> Admin
+          </Button>
       )}
     </div>
   );
@@ -90,7 +85,7 @@ function FlogNav({ onShowAdmin, isAdmin }: { onShowAdmin: () => void; isAdmin: b
 
 
 function MainApp() {
-  const [showAdmin, setShowAdmin] = useState(false);
+  const [view, setView] = useState<'flog' | 'dashboard' | 'admin'>('flog');
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -111,6 +106,11 @@ function MainApp() {
   
   const coinBalance = userProfile?.coinBalance ?? 0;
   const isAdmin = user?.uid === 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
+  
+  const updateCoinBalance = (newBalance: number) => {
+    if (!userProfileRef) return;
+    updateDocumentNonBlocking(userProfileRef, { coinBalance: newBalance });
+  };
 
 
   if (isProfileLoading || !userProfile) {
@@ -140,21 +140,20 @@ function MainApp() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header coinBalance={coinBalance} setView={() => {}} />
+      <Header coinBalance={coinBalance} setView={setView} />
       <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center">
-        {showAdmin ? (
+        {view === 'dashboard' && <DashboardPanel onShowAdmin={() => setView('admin')} isAdmin={isAdmin} coinBalance={coinBalance} updateCoinBalance={updateCoinBalance} />}
+        
+        {view === 'admin' && (
           <>
-            <Button variant="ghost" onClick={() => setShowAdmin(false)} className="mb-4 self-start text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300">
+            <Button variant="ghost" onClick={() => setView('flog')} className="mb-4 self-start text-cyan-400 hover:bg-cyan-900/50 hover:text-cyan-300">
                 Volver al Flog
             </Button>
             <AdminDashboard />
           </>
-        ) : (
-          <>
-            <FlogNav onShowAdmin={() => setShowAdmin(true)} isAdmin={isAdmin} />
-            <FlogDashboard userProfile={userProfile} />
-          </>
         )}
+        
+        {view === 'flog' && <FlogDashboard userProfile={userProfile} />}
       </main>
       <ChatRoom userProfile={userProfile} />
       <Footer />
