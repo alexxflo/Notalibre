@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { UserProfile, FlogProfile } from '@/types';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Loader2 } from 'lucide-react';
 import PhotoManager from './PhotoManager';
 import Guestbook from './Guestbook';
@@ -27,26 +28,27 @@ export default function FlogDashboard({ userProfile }: FlogDashboardProps) {
 
   // Effect to create a Flog profile if it doesn't exist
   useEffect(() => {
-    const initializeFlog = async () => {
+    const initializeFlog = () => {
       if (!isFlogLoading && !flogProfile && user && userProfile && flogProfileRef) {
         setIsInitializing(true);
-        try {
-          const newFlogProfile: Partial<FlogProfile> = {
-            userId: user.uid,
-            username: userProfile.username,
-            mainPhotoUrl: 'https://placehold.co/800x600/000000/00ffff/png?text=VORTEX',
-            description: '¡Bienvenido a mi Flog! Deja tu firma.',
-            lastPhotoUpdate: new Date(0) as any, // Set to epoch to allow immediate update
-            themeColor: 'cyan',
-            likes: 0,
-            dislikes: 0,
-          };
-          await setDoc(flogProfileRef, newFlogProfile);
-        } catch (e) {
-          console.error("Error creating Flog profile:", e);
-        } finally {
-          setIsInitializing(false);
-        }
+        const newFlogProfile: Partial<FlogProfile> = {
+          userId: user.uid,
+          username: userProfile.username,
+          mainPhotoUrl: 'https://placehold.co/800x600/000000/00ffff/png?text=VORTEX',
+          description: '¡Bienvenido a mi Flog! Deja tu firma.',
+          lastPhotoUpdate: new Date(0) as any, // Set to epoch to allow immediate update
+          themeColor: 'cyan',
+          likes: 0,
+          dislikes: 0,
+        };
+        
+        // Use non-blocking call for creation. Errors are handled globally.
+        setDocumentNonBlocking(flogProfileRef, newFlogProfile, {});
+        
+        // The hook will trigger a re-render when data is available.
+        // We can set initializing to false, but the UI will show the loader
+        // until the useDoc hook gets the newly created document.
+        setIsInitializing(false);
       }
     };
     initializeFlog();

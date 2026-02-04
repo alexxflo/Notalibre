@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { GoogleIcon } from '../icons';
 import { useToast } from '@/hooks/use-toast';
 import VortexLogo from '../VortexLogo';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const WELCOME_BONUS = 250;
 
@@ -39,8 +40,8 @@ export default function SignIn() {
           gatekeeperPassed: false,
           isBlocked: false,
         };
-        // We use setDoc here because it's a one-time critical creation.
-        await setDoc(userDocRef, newUserProfile);
+        // Use non-blocking call. Error will be handled globally.
+        setDocumentNonBlocking(userDocRef, newUserProfile, {});
 
         // Increment the global user counter
         const statsRef = doc(firestore, 'stats', 'users');

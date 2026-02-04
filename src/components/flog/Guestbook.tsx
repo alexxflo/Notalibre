@@ -7,9 +7,9 @@ import {
   query,
   orderBy,
   limit,
-  addDoc,
   serverTimestamp,
 } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { FlogProfile, FlogSignature, UserProfile } from '@/types';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -43,32 +43,24 @@ export default function Guestbook({ userProfile, flogProfile }: GuestbookProps) 
 
   const { data: signatures, isLoading } = useCollection<FlogSignature>(signaturesQuery);
 
-  const handleAddSignature = async (e: React.FormEvent) => {
+  const handleAddSignature = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !userProfile || !newSignature.trim() || !flogProfile) return;
 
-    try {
-      const signaturesCollection = collection(firestore, 'flogs', flogProfile.userId, 'signatures');
-      await addDoc(signaturesCollection, {
-        authorId: user.uid,
-        authorUsername: userProfile.username,
-        authorAvatar: userProfile.avatarUrl,
-        text: newSignature,
-        createdAt: serverTimestamp(),
-      });
-      setNewSignature('');
-      toast({
-        title: "¡Firma enviada!",
-        description: "Has dejado tu marca en este Flog.",
-      });
-    } catch (error) {
-      console.error("Error adding signature:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo enviar tu firma.",
-      });
-    }
+    const signaturesCollection = collection(firestore, 'flogs', flogProfile.userId, 'signatures');
+    addDocumentNonBlocking(signaturesCollection, {
+      authorId: user.uid,
+      authorUsername: userProfile.username,
+      authorAvatar: userProfile.avatarUrl,
+      text: newSignature,
+      createdAt: serverTimestamp(),
+    });
+
+    setNewSignature('');
+    toast({
+      title: "¡Firma enviada!",
+      description: "Has dejado tu marca en este Flog.",
+    });
   };
 
   return (

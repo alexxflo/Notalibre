@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useUser } from '@/firebase';
-import { updateDoc, serverTimestamp, DocumentReference, increment } from 'firebase/firestore';
+import { serverTimestamp, DocumentReference, increment } from 'firebase/firestore';
 import { FlogProfile } from '@/types';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -92,7 +92,7 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
   };
 
 
-  const handleSave = async () => {
+  const handleSave = () => {
     const photoChanged = newPhotoDataUrl !== null;
 
     if (photoChanged && !canUpdatePhoto()) {
@@ -104,37 +104,24 @@ export default function PhotoManager({ flogProfile, flogProfileRef }: PhotoManag
       return;
     }
 
-    try {
-      const dataToUpdate: any = { description };
-      if (photoChanged && newPhotoDataUrl) {
-        dataToUpdate.mainPhotoUrl = newPhotoDataUrl;
-        dataToUpdate.lastPhotoUpdate = serverTimestamp();
-      }
-
-      await updateDoc(flogProfileRef, dataToUpdate);
-
-      toast({
-        title: "¡Guardado!",
-        description: "Tu Flog ha sido actualizado.",
-      });
-      
-      setIsEditing(false);
-      setNewPhotoDataUrl(null);
-      setNewPhotoPreview(null);
-      if(fileInputRef.current) fileInputRef.current.value = "";
-
-    } catch (error: any) {
-      console.error("Error updating Flog profile:", error);
-      let description = "No se pudo guardar tu perfil. Revisa las reglas de seguridad o intenta de nuevo.";
-      if (error.message.includes("is larger than 1048576 bytes")) {
-        description = "La imagen es demasiado grande para guardar. Por favor, selecciona una imagen más pequeña."
-      }
-      toast({
-        variant: "destructive",
-        title: "Error al Guardar",
-        description,
-      });
+    const dataToUpdate: any = { description };
+    if (photoChanged && newPhotoDataUrl) {
+      dataToUpdate.mainPhotoUrl = newPhotoDataUrl;
+      dataToUpdate.lastPhotoUpdate = serverTimestamp();
     }
+    
+    // Use non-blocking update. Errors are handled by the global error handler.
+    updateDocumentNonBlocking(flogProfileRef, dataToUpdate);
+
+    toast({
+      title: "¡Guardado!",
+      description: "Tu Flog ha sido actualizado.",
+    });
+    
+    setIsEditing(false);
+    setNewPhotoDataUrl(null);
+    setNewPhotoPreview(null);
+    if(fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleLike = () => {
