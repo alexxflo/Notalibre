@@ -26,9 +26,9 @@ service cloud.firestore {
                     && request.resource.data.gatekeeperPassed == resource.data.gatekeeperPassed;
     }
     
-    // This rule allows the admin to list the entire collection.
+    // This rule allows any authenticated user to list the collection for the F/F feature.
     match /users {
-      allow list: if isAdmin();
+      allow list: if request.auth != null;
     }
 
     // --- Campaign Rules ---
