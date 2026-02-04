@@ -103,7 +103,7 @@ service cloud.firestore {
                       request.resource.data.username == resource.data.username &&
                       request.resource.data.mainPhotoUrl == resource.data.mainPhotoUrl &&
                       request.resource.data.description == resource.data.description &&
-                      request.resource.data.lastPhotoUpdate == resource.data.lastPhotoUpdate &&
+                      request.resource.data.lastPhotoUpdate.seconds == resource.data.lastPhotoUpdate.seconds &&
                       request.resource.data.themeColor == resource.data.themeColor;
     }
     
