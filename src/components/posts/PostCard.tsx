@@ -55,7 +55,9 @@ export default function PostCard({ post, currentUserProfile }: PostCardProps) {
                     <div>
                         <Link href={`/profile/${post.userId}`} className="font-bold hover:underline">{post.username}</Link>
                         <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: es })}
+                            {post.createdAt
+                                ? formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: es })
+                                : 'hace un momento'}
                         </p>
                     </div>
                 </div>
