@@ -4,16 +4,28 @@ function isAdmin() {
   return request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
 }
 
+// Function to check if the requesting user's profile exists and they are blocked
+function isUserBlocked() {
+    return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBlocked == true;
+}
+
+// Function to check if the user is authenticated and not blocked
+function isNotBlocked() {
+    // Check if auth exists and then check if the user is not blocked.
+    return request.auth != null && isUserBlocked() == false;
+}
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- User Collection/Document Rules ---
     match /users/{userId} {
-      allow list, get: if request.auth != null;
-      allow write: if isAdmin() || request.auth.uid == userId;
+      allow list, get: if isNotBlocked();
+      allow write: if isAdmin() || (isNotBlocked() && request.auth.uid == userId);
       
       // Allow a user to follow/unfollow another user
-      allow update: if request.auth != null && request.auth.uid != userId &&
+      allow update: if isNotBlocked() && request.auth.uid != userId &&
                       (
                         (request.resource.data.followers.diff(resource.data.followers).addedKeys().hasOnly([request.auth.uid]) &&
                          request.resource.data.followers.diff(resource.data.followers).removedKeys().size() == 0) ||
@@ -24,25 +36,25 @@ service cloud.firestore {
     
     // --- Post Collection Rules ---
     match /posts/{postId} {
-      allow list, get: if request.auth != null;
+      allow list, get: if isNotBlocked();
       
       // Users can create posts for themselves
-      allow create: if request.auth.uid == request.resource.data.userId;
+      allow create: if isNotBlocked() && request.auth.uid == request.resource.data.userId;
       
       // Allow users to delete their own posts
       allow delete: if resource.data.userId == request.auth.uid;
       
       // Allow post author to edit their post, or any user to update the likes
       allow update: if (resource.data.userId == request.auth.uid) ||
-                      (request.resource.data.keys().hasOnly(['likes']));
+                      (isNotBlocked() && request.resource.data.keys().hasOnly(['likes']));
     }
 
     // --- Comment Sub-collection Rules ---
     match /posts/{postId}/comments/{commentId} {
-      allow list, get: if request.auth != null;
+      allow list, get: if isNotBlocked();
       
       // Users can create comments for themselves
-      allow create: if request.auth.uid == request.resource.data.userId;
+      allow create: if isNotBlocked() && request.auth.uid == request.resource.data.userId;
       
       // Allow comment author or post author to delete comments
       allow delete: if request.auth.uid == resource.data.userId || request.auth.uid == get(/databases/$(database)/documents/posts/$(postId)).data.userId;
@@ -52,17 +64,17 @@ service cloud.firestore {
     // --- Campaign Rules ---
     match /campaigns/{campaignId} {
         // Any logged-in user can read campaigns
-        allow list, get: if request.auth != null;
+        allow list, get: if isNotBlocked();
         // A user can create a campaign for themselves
-        allow create: if request.auth.uid == request.resource.data.userId;
+        allow create: if isNotBlocked() && request.auth.uid == request.resource.data.userId;
         // Any authenticated user can delete (claim) a campaign.
-        allow delete: if request.auth != null;
+        allow delete: if isNotBlocked();
     }
 
     // --- Purchase Verification Rules ---
     match /purchase_verifications/{verificationId} {
         // Authenticated users can create their own verification requests
-        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        allow create: if isNotBlocked() && request.resource.data.userId == request.auth.uid;
         
         // The unauthenticated bot can read and update
         allow get, update: if request.auth == null;
@@ -71,17 +83,18 @@ service cloud.firestore {
     // --- Stats Rules ---
     match /stats/{statId} {
       // Any authenticated user can read stats
-      allow read: if request.auth != null;
+      allow read: if isNotBlocked();
       // Allow the client to increment the user count upon sign-up.
+      // Do not check if blocked, as the user document might not exist yet.
       allow create, update: if request.auth != null;
     }
 
     // --- Chat Rules ---
     match /messages/{messageId} {
         // Any authenticated user can read the chat history
-        allow list, get: if request.auth != null;
+        allow list, get: if isNotBlocked();
         // Any authenticated user can send a message, but they must be the author
-        allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+        allow create: if isNotBlocked() && request.auth.uid == request.resource.data.userId;
     }
   }
 }

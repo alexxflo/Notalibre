@@ -1,39 +1,35 @@
 "use client";
 
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Loader2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SignIn from '@/components/auth/SignIn';
 import ChatRoom from '@/components/ChatRoom';
-import PostForm from '@/components/posts/PostForm';
-import PostCard from '@/components/posts/PostCard';
+import Dashboard from '@/components/Dashboard';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Post, UserProfile } from '@/types';
+import type { UserProfile } from '@/types';
 
-function MainApp() {
+function AppContainer() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const postsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'posts'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+  // Fetch the current user's profile
+  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
-  const { data: posts, isLoading: arePostsLoading } = useCollection<Post>(postsQuery);
+  const handleUpdateUserProfile = (updates: Partial<UserProfile>) => {
+    if (!userProfileRef) return;
+    updateDocumentNonBlocking(userProfileRef, updates);
+  };
 
-  // This is a bit inefficient, but for now we fetch all users to get profile info.
-  // A better approach would be to fetch profiles on demand.
-  const usersQuery = useMemoFirebase(() => collection(firestore, 'users'), [firestore]);
-  const { data: users, isLoading: areUsersLoading } = useCollection<UserProfile>(usersQuery);
-  
-  const userProfile = users?.find(u => u.id === user?.uid);
-
-  if (areUsersLoading || !userProfile) {
+  if (isProfileLoading || !userProfile) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Loader2 className="h-16 w-16 animate-spin text-cyan-400" />
+        <p className="mt-4 text-slate-400">Cargando tu perfil...</p>
       </div>
     );
   }
@@ -41,29 +37,7 @@ function MainApp() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header coinBalance={userProfile.coinBalance} />
-      <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center gap-8">
-        <div className="w-full max-w-2xl">
-          <PostForm userProfile={userProfile} />
-        </div>
-        
-        <div className="w-full max-w-2xl space-y-6">
-          {arePostsLoading && Array.from({ length: 3 }).map((_, i) => (
-             <div key={i} className="bg-card p-4 rounded-lg border border-border space-y-4">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <Skeleton className="h-5 w-32" />
-                </div>
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="aspect-video w-full rounded-md" />
-             </div>
-          ))}
-
-          {posts?.map(post => (
-            <PostCard key={post.id} post={post} currentUserProfile={userProfile} />
-          ))}
-        </div>
-      </main>
+      <Dashboard userProfile={userProfile} updateUserProfile={handleUpdateUserProfile} />
       <ChatRoom userProfile={userProfile} />
       <Footer />
     </div>
@@ -82,7 +56,7 @@ export default function Home() {
             <Skeleton className="h-10 w-48 rounded-full bg-slate-700" />
           </div>
         </div>
-         <Skeleton className="h-96 w-full max-w-2xl mt-8 rounded-xl bg-slate-700" />
+         <Skeleton className="h-[600px] w-full max-w-4xl mt-8 rounded-xl bg-slate-700" />
       </div>
     )
   }
@@ -91,5 +65,5 @@ export default function Home() {
     return <SignIn />;
   }
 
-  return <MainApp />;
+  return <AppContainer />;
 }
