@@ -53,8 +53,15 @@ function Calendar({
         day_hidden: "invisible",
         ...classNames,
       }}
-      iconPrevious={<ChevronLeft className="h-4 w-4" />}
-      iconNext={<ChevronRight className="h-4 w-4" />}
+      // AQUÍ ESTÁ EL CAMBIO CLAVE PARA LA VERSIÓN 9
+      components={{
+        Chevron: ({ ...props }) => {
+          if (props.orientation === "left") {
+            return <ChevronLeft className="h-4 w-4" />
+          }
+          return <ChevronRight className="h-4 w-4" />
+        },
+      }}
       {...props}
     />
   )
