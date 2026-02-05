@@ -21,7 +21,13 @@ function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, 
     const isOwnProfile = currentUserProfile?.id === profile.id;
 
     const handleFollowToggle = () => {
-        if (isOwnProfile || !currentUserProfile) return;
+        if (!currentUserProfile) return;
+
+        // Prevent following yourself
+        if (isOwnProfile) {
+            toast({ variant: 'destructive', description: 'No puedes seguirte a ti mismo.'});
+            return;
+        };
 
         const currentUserDocRef = doc(firestore, 'users', currentUserProfile.id);
         const targetUserDocRef = doc(firestore, 'users', profile.id);
@@ -90,7 +96,7 @@ export default function ProfilePage() {
     const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(profileRef);
 
     const currentUserProfileRef = useMemoFirebase(() => currentUser ? doc(firestore, 'users', currentUser.uid) : null, [firestore, currentUser]);
-    const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } = useDoc<UserProfile>(currentUserProfileRef);
+    const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
 
     const postsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -121,7 +127,7 @@ export default function ProfilePage() {
             });
     }, [allPosts, userId, isOwnProfile]);
 
-    const isLoading = isAuthLoading || isProfileLoading || (currentUser != null && isCurrentUserProfileLoading);
+    const isLoading = isAuthLoading || isProfileLoading;
 
     if (isLoading) {
         return (
@@ -131,7 +137,6 @@ export default function ProfilePage() {
         );
     }
     
-    // After loading, if the viewed profile doesn't exist, show error.
     if (!profile) {
         return (
            <div className="flex items-center justify-center min-h-screen">
@@ -140,12 +145,14 @@ export default function ProfilePage() {
        );
    }
 
-   // Edge case: User is logged in, loading is done, but their profile doc hasn't been created yet.
-   if (currentUser && !currentUserProfile) {
+   // This handles the transitional states for login and logout to prevent crashes.
+   // Login: `currentUser` exists, but `currentUserProfile` is not yet loaded.
+   // Logout: `currentUser` is null, but `currentUserProfile` might still hold stale data for one render cycle.
+   if ((currentUser && !currentUserProfile) || (!currentUser && currentUserProfile)) {
        return (
            <div className="flex items-center justify-center min-h-screen">
                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-               <p className="ml-4 text-slate-300">Finalizando inicio de sesión...</p>
+               <p className="ml-4 text-slate-300">Actualizando sesión...</p>
            </div>
        );
    }
