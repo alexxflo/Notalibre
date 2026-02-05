@@ -25,7 +25,11 @@ function AppContainer() {
     updateDocumentNonBlocking(userProfileRef, updates);
   };
 
-  if (isProfileLoading || !userProfile) {
+  // When logging out, `user` becomes null first, while `userProfile` might still
+  // hold stale data for one render cycle. This check ensures we show a loader
+  // during that transition, preventing crashes in child components that rely on
+  // both `user` and `userProfile` being consistent.
+  if (isProfileLoading || !userProfile || !user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Loader2 className="h-16 w-16 animate-spin text-cyan-400" />
