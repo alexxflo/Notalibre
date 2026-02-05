@@ -8,8 +8,11 @@ function isAdmin() {
 function isUserBlocked() {
     // This function can't be called in a rule for the user's own document,
     // as it would cause a recursive lookup.
-    return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBlocked == true;
+    if (!exists(/databases/$(database)/documents/users/$(request.auth.uid))) {
+      return false; // A user without a profile is not considered blocked.
+    }
+    // Safely access the isBlocked field, defaulting to 'false' if it's missing.
+    return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isBlocked', false) == true;
 }
 
 // Function to check if the user is authenticated and not blocked
