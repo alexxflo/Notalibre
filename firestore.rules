@@ -1,11 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Esto permite que cualquier usuario logueado lea y escriba en CUALQUIER colección
+    // El comodín {document=**} asegura TODAS las colecciones y subcolecciones
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
-    
   }
 }
