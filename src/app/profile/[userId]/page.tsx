@@ -90,7 +90,7 @@ export default function ProfilePage() {
     const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(profileRef);
 
     const currentUserProfileRef = useMemoFirebase(() => currentUser ? doc(firestore, 'users', currentUser.uid) : null, [firestore, currentUser]);
-    const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
+    const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } = useDoc<UserProfile>(currentUserProfileRef);
 
     const postsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -121,7 +121,7 @@ export default function ProfilePage() {
             });
     }, [allPosts, userId, isOwnProfile]);
 
-    if (isProfileLoading || !profile || !currentUserProfile) {
+    if (isProfileLoading || isCurrentUserProfileLoading || !profile || !currentUserProfile) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <Loader2 className="h-16 w-16 animate-spin text-primary" />
