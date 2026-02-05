@@ -303,6 +303,12 @@
       },
       "description": "Stores user profile data. The 'userId' parameter corresponds to the authenticated user's UID, ensuring path-based ownership."
     },
+    "/users/{userId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/ChatMessage"
+      },
+      "description": "Stores private chat messages for a specific user."
+    },
     "/posts/{postId}": {
       "schema": {
         "$ref": "#/entities/Post"
@@ -338,12 +344,6 @@
         "$ref": "#/entities/PurchaseVerification"
       },
       "description": "Stores manual purchase verification requests. Only administrators should have write access to change the status."
-    },
-    "/messages/{messageId}": {
-      "schema": {
-        "$ref": "#/entities/ChatMessage"
-      },
-      "description": "Stores global chat messages. Sorted by creation time."
     }
   }
 }

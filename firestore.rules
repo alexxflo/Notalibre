@@ -1,7 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // El comodín {document=**} asegura TODAS las colecciones y subcolecciones
+    
+    // Esto cubre 'messages', 'posts' y cualquier otra colección
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

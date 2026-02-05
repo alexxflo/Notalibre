@@ -24,10 +24,9 @@ import {
   orderBy,
   limit,
   serverTimestamp,
-  where,
 } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { MessageCircle, Send, Loader2 } from 'lucide-react';
+import { MessageCircle, Send, Loader2, Bot } from 'lucide-react';
 import type { ChatMessage, UserProfile } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -39,11 +38,12 @@ export default function ChatRoom({ userProfile }: { userProfile: UserProfile | n
   const [isOpen, setIsOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  // This query now points to a user-specific subcollection, which is much more scalable
+  // and doesn't require complex composite indexes.
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
-      collection(firestore, 'messages'),
-      where('userId', '==', user.uid),
+      collection(firestore, 'users', user.uid, 'messages'),
       orderBy('createdAt', 'desc'),
       limit(50)
     );
@@ -54,11 +54,14 @@ export default function ChatRoom({ userProfile }: { userProfile: UserProfile | n
   const reversedMessages = useMemo(() => messages?.slice().reverse() ?? [], [messages]);
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
+    if (isOpen && scrollAreaRef.current) {
         // A bit of a hack to get the viewport element from the ScrollArea component
         const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
         if (viewport) {
-            viewport.scrollTop = viewport.scrollHeight;
+            // Use setTimeout to allow the DOM to update before scrolling
+            setTimeout(() => {
+                viewport.scrollTop = viewport.scrollHeight;
+            }, 100);
         }
     }
   }, [reversedMessages, isOpen]);
@@ -67,7 +70,8 @@ export default function ChatRoom({ userProfile }: { userProfile: UserProfile | n
     e.preventDefault();
     if (!firestore || !user || !userProfile || !newMessage.trim()) return;
 
-    const messagesCollection = collection(firestore, 'messages');
+    // Messages are now added to a private subcollection under the user's document.
+    const messagesCollection = collection(firestore, 'users', user.uid, 'messages');
     addDocumentNonBlocking(messagesCollection, {
       userId: user.uid,
       username: userProfile.username,
@@ -91,7 +95,7 @@ export default function ChatRoom({ userProfile }: { userProfile: UserProfile | n
       </SheetTrigger>
       <SheetContent className="flex flex-col bg-slate-900 border-slate-700 p-0">
         <SheetHeader className="p-4 border-b border-slate-700">
-          <SheetTitle className="text-magenta-400 font-headline">Chat Privado</SheetTitle>
+          <SheetTitle className="text-magenta-400 font-headline">Chat de Soporte</SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
           {isLoading && (
@@ -100,6 +104,13 @@ export default function ChatRoom({ userProfile }: { userProfile: UserProfile | n
             </div>
           )}
           <div className="space-y-4">
+            {!isLoading && reversedMessages.length === 0 && (
+              <div className="text-center text-slate-500 py-16 flex flex-col items-center gap-4">
+                <Bot className="h-12 w-12 text-slate-600" />
+                <p className="font-bold">Este es tu chat privado con Soporte.</p>
+                <p>¡Envía un mensaje para empezar la conversación!</p>
+              </div>
+            )}
             {reversedMessages.map((msg) => (
               <div
                 key={msg.id}
@@ -142,12 +153,6 @@ export default function ChatRoom({ userProfile }: { userProfile: UserProfile | n
                 )}
               </div>
             ))}
-             {!isLoading && reversedMessages.length === 0 && (
-              <div className="text-center text-slate-500 py-16">
-                <p className="font-bold">No tienes mensajes.</p>
-                <p>¡Envía un mensaje para empezar!</p>
-              </div>
-            )}
           </div>
         </ScrollArea>
         <form
@@ -157,7 +162,7 @@ export default function ChatRoom({ userProfile }: { userProfile: UserProfile | n
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Escribe un mensaje..."
+            placeholder="Escribe un mensaje a Soporte..."
             className="bg-slate-800 border-slate-600 focus:ring-magenta-500"
             autoComplete="off"
           />
