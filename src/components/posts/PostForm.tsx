@@ -8,7 +8,7 @@ import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Image as ImageIcon, Send, X } from 'lucide-react';
+import { Image as ImageIcon, Loader2, Send, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile } from '@/types';
 
