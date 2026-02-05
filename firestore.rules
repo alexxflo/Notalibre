@@ -26,12 +26,10 @@ service cloud.firestore {
 
     // --- User Collection/Document Rules ---
     match /users/{userId} {
-      // A user can always get their own document. This is required for the app to load
-      // and breaks the recursive permission check in isUserBlocked.
-      allow get: if request.auth.uid == userId;
-      
-      // Any authenticated, non-blocked user can list users or get any other user's document.
-      allow list, get: if isNotBlocked();
+      // Any authenticated user can list users or get any user's document.
+      // The isNotBlocked() check is removed here to prevent a recursive loop where
+      // checking for a block requires reading a document protected by the block check.
+      allow list, get: if request.auth != null;
       
       // Users can create/update their own document if they are not blocked. Admins can write anything.
       allow write: if isAdmin() || (isNotBlocked() && request.auth.uid == userId);
