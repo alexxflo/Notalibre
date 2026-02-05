@@ -14,15 +14,12 @@ export default function GatekeeperModal({ onConfirm }: GatekeeperModalProps) {
   const [isFollowing, setIsFollowing] = useState(false);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
     if (isFollowing && countdown > 0) {
-      timer = setInterval(() => {
+      const timerId = setInterval(() => {
         setCountdown((prev) => prev - 1);
       }, 1000);
-    } else if (countdown === 0) {
-      clearInterval(timer);
+      return () => clearInterval(timerId);
     }
-    return () => clearInterval(timer);
   }, [isFollowing, countdown]);
 
   const handleFollowClick = () => {
