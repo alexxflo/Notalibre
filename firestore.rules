@@ -1,14 +1,89 @@
+rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Regla para la colección de mensajes
-    match /messages/{messageId} {
-      // Permite leer si el usuario está logueado
+
+    // Global Functions
+    function isNotBlocked() {
+      // Let the admin always pass
+      if (request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1') {
+          return true;
+      }
+      // This function can be used in WRITE rules. It checks if the user is blocked.
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isBlocked', false) == false;
+    }
+
+    // USER PROFILES
+    match /users/{userId} {
+      // Any authenticated user can read user profiles.
       allow read: if request.auth != null;
+
+      // A user can create their own profile.
+      allow create: if request.auth.uid == userId;
+
+      // A user can update their own profile, but not sensitive fields. Admin can update anything.
+      allow update: if (request.auth.uid == userId && isNotBlocked() &&
+                       request.resource.data.coinBalance == resource.data.coinBalance &&
+                       request.resource.data.isBlocked == resource.data.isBlocked) ||
+                      (request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1');
+    }
+
+    // POSTS & COMMENTS
+    match /posts/{postId} {
+      // Any authenticated user can read posts.
+      allow read: if request.auth != null;
+
+      // Users can create posts if they are not blocked.
+      allow create: if isNotBlocked() && request.auth.uid == request.resource.data.userId;
+
+      // Users can update their own posts. Anyone can update likes/comments. Admin can update any post.
+      allow update: if (isNotBlocked() && (
+                       (request.auth.uid == resource.data.userId) ||
+                       (request.resource.data.keys().hasOnly(['likes', 'commentCount']))
+                     )) ||
+                     (request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1');
       
-      // Permite escribir solo si el usuario está logueado
-      allow write: if request.auth != null;
+      // Post owner or admin can delete.
+      allow delete: if (isNotBlocked() && request.auth.uid == resource.data.userId) ||
+                       (request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1');
+
+
+      match /comments/{commentId} {
+        // Any authenticated user can read comments.
+        allow read: if request.auth != null;
+        allow create: if isNotBlocked();
+        allow delete, update: if (isNotBlocked() && request.auth.uid == resource.data.userId) ||
+                                 (request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1');
+      }
+    }
+
+    // CAMPAIGNS
+    match /campaigns/{campaignId} {
+        // Any authenticated user can read campaigns.
+        allow read: if request.auth != null;
+        allow create: if isNotBlocked() && request.auth.uid == request.resource.data.userId;
+        allow delete: if isNotBlocked(); // Any non-blocked user can 'claim' a campaign.
+    }
+
+    // PURCHASE VERIFICATIONS
+    match /purchase_verifications/{verificationId} {
+      allow create: if isNotBlocked() && request.auth.uid == request.resource.data.userId;
+      // Only admin can read/update.
+      allow read, update: if request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
+    }
+
+    // GLOBAL CHAT MESSAGES
+    match /messages/{messageId} {
+      allow read: if request.auth != null;
+      allow create: if isNotBlocked();
     }
     
+    // STATS
+    match /stats/{docId} {
+      allow read: if request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
+      allow write: if request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
+      // Allow client to increment user counter, but only that field.
+      allow update: if request.resource.data.keys().hasOnly(['count']);
+    }
   }
 }
