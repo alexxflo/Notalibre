@@ -24,6 +24,7 @@ import {
   orderBy,
   limit,
   serverTimestamp,
+  where,
 } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { MessageCircle, Send, Loader2 } from 'lucide-react';
@@ -39,13 +40,14 @@ export default function ChatRoom({ userProfile }: { userProfile: UserProfile | n
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const messagesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(
       collection(firestore, 'messages'),
+      where('userId', '==', user.uid),
       orderBy('createdAt', 'desc'),
       limit(50)
     );
-  }, [firestore]);
+  }, [firestore, user]);
 
   const { data: messages, isLoading } = useCollection<ChatMessage>(messagesQuery);
 
@@ -89,7 +91,7 @@ export default function ChatRoom({ userProfile }: { userProfile: UserProfile | n
       </SheetTrigger>
       <SheetContent className="flex flex-col bg-slate-900 border-slate-700 p-0">
         <SheetHeader className="p-4 border-b border-slate-700">
-          <SheetTitle className="text-magenta-400 font-headline">Chat Global</SheetTitle>
+          <SheetTitle className="text-magenta-400 font-headline">Chat Privado</SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
           {isLoading && (
@@ -140,6 +142,12 @@ export default function ChatRoom({ userProfile }: { userProfile: UserProfile | n
                 )}
               </div>
             ))}
+             {!isLoading && reversedMessages.length === 0 && (
+              <div className="text-center text-slate-500 py-16">
+                <p className="font-bold">No tienes mensajes.</p>
+                <p>¡Envía un mensaje para empezar!</p>
+              </div>
+            )}
           </div>
         </ScrollArea>
         <form
