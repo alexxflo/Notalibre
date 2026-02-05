@@ -25,7 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 
 type PostCardProps = {
     post: Post;
-    currentUserProfile: UserProfile;
+    currentUserProfile: UserProfile | null;
 };
 
 export default function PostCard({ post, currentUserProfile }: PostCardProps) {
@@ -34,13 +34,15 @@ export default function PostCard({ post, currentUserProfile }: PostCardProps) {
     const { toast } = useToast();
     const [showComments, setShowComments] = useState(false);
     
-    if (!user) return null;
-
-    const isLiked = post.likes.includes(user.uid);
+    const isLiked = user ? post.likes.includes(user.uid) : false;
     const postRef = doc(firestore, 'posts', post.id);
-    const isOwner = currentUserProfile.id === post.userId;
+    const isOwner = currentUserProfile?.id === post.userId;
 
     const handleLikeToggle = () => {
+        if (!user) {
+            toast({ variant: 'destructive', description: 'Necesitas iniciar sesión para dar me gusta.' });
+            return;
+        }
         if (isLiked) {
             updateDocumentNonBlocking(postRef, {
                 likes: arrayRemove(user.uid)

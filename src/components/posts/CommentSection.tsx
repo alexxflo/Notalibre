@@ -15,7 +15,7 @@ import Link from 'next/link';
 
 type CommentSectionProps = {
     postId: string;
-    currentUserProfile: UserProfile;
+    currentUserProfile: UserProfile | null;
 };
 
 function SingleComment({ comment }: { comment: Comment }) {
@@ -56,7 +56,7 @@ export default function CommentSection({ postId, currentUserProfile }: CommentSe
 
     const handleSubmitComment = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newComment.trim()) return;
+        if (!newComment.trim() || !currentUserProfile) return;
 
         setIsSubmitting(true);
         const commentsCollection = collection(firestore, 'posts', postId, 'comments');
@@ -93,22 +93,24 @@ export default function CommentSection({ postId, currentUserProfile }: CommentSe
                 {comments?.map(comment => <SingleComment key={comment.id} comment={comment} />)}
             </div>
 
-            <form onSubmit={handleSubmitComment} className="flex items-center gap-2">
-                <Avatar className="h-9 w-9">
-                    <AvatarImage src={currentUserProfile.avatarUrl} />
-                    <AvatarFallback>{currentUserProfile.username.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <Input
-                    placeholder="Escribe un comentario..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    className="bg-muted border-border"
-                    disabled={isSubmitting}
-                />
-                <Button type="submit" size="icon" disabled={isSubmitting || !newComment.trim()}>
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : <Send />}
-                </Button>
-            </form>
+            {currentUserProfile && (
+                <form onSubmit={handleSubmitComment} className="flex items-center gap-2">
+                    <Avatar className="h-9 w-9">
+                        <AvatarImage src={currentUserProfile.avatarUrl} />
+                        <AvatarFallback>{currentUserProfile.username.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <Input
+                        placeholder="Escribe un comentario..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        className="bg-muted border-border"
+                        disabled={isSubmitting}
+                    />
+                    <Button type="submit" size="icon" disabled={isSubmitting || !newComment.trim()}>
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : <Send />}
+                    </Button>
+                </form>
+            )}
         </div>
     );
 }

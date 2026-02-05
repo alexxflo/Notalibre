@@ -14,14 +14,14 @@ import PostCard from '@/components/posts/PostCard';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
-function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, currentUserProfile: UserProfile }) {
+function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, currentUserProfile: UserProfile | null }) {
     const firestore = useFirestore();
     const { toast } = useToast();
-    const isFollowing = currentUserProfile.following?.includes(profile.id) ?? false;
-    const isOwnProfile = currentUserProfile.id === profile.id;
+    const isFollowing = currentUserProfile?.following?.includes(profile.id) ?? false;
+    const isOwnProfile = currentUserProfile?.id === profile.id;
 
     const handleFollowToggle = () => {
-        if (isOwnProfile) return;
+        if (isOwnProfile || !currentUserProfile) return;
 
         const currentUserDocRef = doc(firestore, 'users', currentUserProfile.id);
         const targetUserDocRef = doc(firestore, 'users', profile.id);
@@ -62,7 +62,7 @@ function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, 
                     </div>
                 </div>
             </div>
-            {!isOwnProfile && (
+            {!isOwnProfile && currentUserProfile && (
                  <div className="flex flex-col sm:flex-row gap-2">
                     <Button onClick={handleFollowToggle} variant={isFollowing ? 'secondary' : 'default'}>
                         {isFollowing ? <UserCheck className="mr-2"/> : <Users className="mr-2"/>}
@@ -84,7 +84,7 @@ export default function ProfilePage() {
     const params = useParams();
     const userId = params.userId as string;
     const firestore = useFirestore();
-    const { user: currentUser } = useUser();
+    const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
 
     const profileRef = useMemoFirebase(() => userId ? doc(firestore, 'users', userId) : null, [firestore, userId]);
     const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(profileRef);
@@ -121,7 +121,9 @@ export default function ProfilePage() {
             });
     }, [allPosts, userId, isOwnProfile]);
 
-    if (isProfileLoading || isCurrentUserProfileLoading || !profile || !currentUserProfile) {
+    const isLoading = isAuthLoading || isProfileLoading || (currentUser != null && isCurrentUserProfileLoading);
+
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -129,6 +131,25 @@ export default function ProfilePage() {
         );
     }
     
+    // After loading, if the viewed profile doesn't exist, show error.
+    if (!profile) {
+        return (
+           <div className="flex items-center justify-center min-h-screen">
+                <p className="text-xl text-slate-400">Este perfil no existe.</p>
+           </div>
+       );
+   }
+
+   // Edge case: User is logged in, loading is done, but their profile doc hasn't been created yet.
+   if (currentUser && !currentUserProfile) {
+       return (
+           <div className="flex items-center justify-center min-h-screen">
+               <Loader2 className="h-16 w-16 animate-spin text-primary" />
+               <p className="ml-4 text-slate-300">Finalizando inicio de sesión...</p>
+           </div>
+       );
+   }
+
     return (
         <div className="min-h-screen flex flex-col">
             <Header coinBalance={currentUserProfile?.coinBalance ?? 0}/>
