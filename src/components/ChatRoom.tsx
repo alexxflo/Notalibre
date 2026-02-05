@@ -140,7 +140,7 @@ export default function ChatRoom({ userProfile }: { userProfile: UserProfile | n
                   </div>
                   <span className="text-xs text-slate-500 mt-1">
                      {msg.userId !== user?.uid && <span className="font-semibold">{msg.username} &middot; </span>}
-                     {msg.createdAt
+                     {msg.createdAt?.toDate
                       ? formatDistanceToNow(msg.createdAt.toDate(), { addSuffix: true, locale: es })
                       : 'enviando...'}
                   </span>

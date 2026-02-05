@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
+import { doc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -55,7 +55,7 @@ export default function PostCard({ post, currentUserProfile }: PostCardProps) {
                     <div>
                         <Link href={`/profile/${post.userId}`} className="font-bold hover:underline">{post.username}</Link>
                         <p className="text-xs text-muted-foreground">
-                            {post.createdAt
+                            {post.createdAt?.toDate
                                 ? formatDistanceToNow(post.createdAt.toDate(), { addSuffix: true, locale: es })
                                 : 'hace un momento'}
                         </p>

@@ -31,7 +31,7 @@ function SingleComment({ comment }: { comment: Comment }) {
                 <div className="flex items-baseline gap-2">
                     <Link href={`/profile/${comment.userId}`} className="font-bold text-sm hover:underline">{comment.username}</Link>
                     <p className="text-xs text-muted-foreground">
-                        {comment.createdAt
+                        {comment.createdAt?.toDate
                             ? formatDistanceToNow(comment.createdAt.toDate(), { addSuffix: true, locale: es })
                             : 'enviando...'}
                     </p>
