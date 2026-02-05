@@ -1,12 +1,13 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Post } from '@/types';
-import { Loader2, Users, UserCheck } from 'lucide-react';
+import { Loader2, Users, UserCheck, MessageSquare } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PostCard from '@/components/posts/PostCard';
@@ -62,10 +63,18 @@ function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, 
                 </div>
             </div>
             {!isOwnProfile && (
-                <Button onClick={handleFollowToggle} variant={isFollowing ? 'secondary' : 'default'}>
-                    {isFollowing ? <UserCheck className="mr-2"/> : <Users className="mr-2"/>}
-                    {isFollowing ? 'Siguiendo' : 'Seguir'}
-                </Button>
+                 <div className="flex flex-col sm:flex-row gap-2">
+                    <Button onClick={handleFollowToggle} variant={isFollowing ? 'secondary' : 'default'}>
+                        {isFollowing ? <UserCheck className="mr-2"/> : <Users className="mr-2"/>}
+                        {isFollowing ? 'Siguiendo' : 'Seguir'}
+                    </Button>
+                    <Button variant="outline" asChild>
+                        <a href={`mailto:${profile.email}`}>
+                            <MessageSquare className="mr-2" />
+                            Enviar Mensaje
+                        </a>
+                    </Button>
+                </div>
             )}
         </div>
     );
@@ -85,10 +94,26 @@ export default function ProfilePage() {
 
     const postsQuery = useMemoFirebase(() => {
         if (!firestore || !userId) return null;
-        return query(collection(firestore, 'posts'), where('userId', '==', userId), where('imageUrl', '!=', null));
+        // The composite query (with `where('imageUrl', '!=', null)`) was causing a "missing index"
+        // error that manifests as a permission error. We fetch all posts by the user and filter on the client.
+        return query(collection(firestore, 'posts'), where('userId', '==', userId));
     }, [firestore, userId]);
 
-    const { data: posts, isLoading: arePostsLoading } = useCollection<Post>(postsQuery);
+    const { data: allPosts, isLoading: arePostsLoading } = useCollection<Post>(postsQuery);
+
+    const posts = useMemo(() => {
+        if (!allPosts) return [];
+        // We only want to show posts that have an image on the profile page.
+        // Also sort them by creation date, newest first.
+        return allPosts
+            .filter(post => post.imageUrl)
+            .sort((a, b) => {
+                if (a.createdAt?.toMillis && b.createdAt?.toMillis) {
+                    return b.createdAt.toMillis() - a.createdAt.toMillis();
+                }
+                return 0;
+            });
+    }, [allPosts]);
 
     if (isProfileLoading || !profile || !currentUserProfile) {
         return (
@@ -103,15 +128,18 @@ export default function ProfilePage() {
             <Header coinBalance={currentUserProfile?.coinBalance ?? 0}/>
             <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center gap-8">
                 <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} />
-                <h2 className="text-2xl font-headline text-white self-start max-w-4xl w-full">Publicaciones</h2>
+                <h2 className="text-2xl font-headline text-white self-start max-w-4xl w-full">Publicaciones con Imagen</h2>
                 <div className="w-full max-w-2xl space-y-6">
                     {arePostsLoading ? (
-                        <p>Cargando publicaciones...</p>
+                        <div className="flex justify-center items-center py-16">
+                            <Loader2 className="h-12 w-12 animate-spin text-cyan-400" />
+                            <p className="ml-4">Cargando publicaciones...</p>
+                        </div>
                     ) : posts && posts.length > 0 ? (
                          posts.map(post => <PostCard key={post.id} post={post} currentUserProfile={currentUserProfile}/>)
                     ) : (
                         <div className="text-center py-16 bg-card border border-border rounded-lg">
-                            <p className="text-slate-400">Este usuario aún no ha publicado nada.</p>
+                            <p className="text-slate-400">Este usuario aún no ha publicado nada con imágenes.</p>
                         </div>
                     )}
                 </div>
