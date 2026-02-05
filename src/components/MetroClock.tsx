@@ -19,18 +19,19 @@ const TimePart = ({ value, label }: { value: string; label: string }) => (
 );
 
 export default function MetroClock({ username }: { username: string }) {
-  const [time, setTime] = useState(new Date());
+  const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    setTime(new Date());
     const timerId = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timerId);
   }, []);
 
   const formatTime = (num: number) => num.toString().padStart(2, '0');
 
-  const hours = formatTime(time.getHours());
-  const minutes = formatTime(time.getMinutes());
-  const seconds = formatTime(time.getSeconds());
+  const hours = time ? formatTime(time.getHours()) : '--';
+  const minutes = time ? formatTime(time.getMinutes()) : '--';
+  const seconds = time ? formatTime(time.getSeconds()) : '--';
 
   return (
     <div className="bg-slate-900/50 border border-slate-700/50 backdrop-blur-sm rounded-lg p-6 flex justify-between items-center w-full">

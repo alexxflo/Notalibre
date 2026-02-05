@@ -39,7 +39,6 @@ export default function SignIn() {
           coinBalance: WELCOME_BONUS,
           gatekeeperPassed: false,
           isBlocked: false,
-          interactedFlogIds: [],
           following: [],
           followers: [],
         };
