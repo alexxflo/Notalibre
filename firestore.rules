@@ -6,6 +6,8 @@ function isAdmin() {
 
 // Function to check if the requesting user's profile exists and they are blocked
 function isUserBlocked() {
+    // This function can't be called in a rule for the user's own document,
+    // as it would cause a recursive lookup.
     return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBlocked == true;
 }
@@ -21,10 +23,17 @@ service cloud.firestore {
 
     // --- User Collection/Document Rules ---
     match /users/{userId} {
+      // A user can always get their own document. This is required for the app to load
+      // and breaks the recursive permission check in isUserBlocked.
+      allow get: if request.auth.uid == userId;
+      
+      // Any authenticated, non-blocked user can list users or get any other user's document.
       allow list, get: if isNotBlocked();
+      
+      // Users can create/update their own document if they are not blocked. Admins can write anything.
       allow write: if isAdmin() || (isNotBlocked() && request.auth.uid == userId);
       
-      // Allow a user to follow/unfollow another user
+      // Allow a user to follow/unfollow another user by modifying the 'followers' array.
       allow update: if isNotBlocked() && request.auth.uid != userId &&
                       (
                         (request.resource.data.followers.diff(resource.data.followers).addedKeys().hasOnly([request.auth.uid]) &&
