@@ -93,27 +93,27 @@ export default function ProfilePage() {
     const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
 
     const postsQuery = useMemoFirebase(() => {
-        if (!firestore || !userId) return null;
-        // The composite query (with `where('imageUrl', '!=', null)`) was causing a "missing index"
-        // error that manifests as a permission error. We fetch all posts by the user and filter on the client.
-        return query(collection(firestore, 'posts'), where('userId', '==', userId));
-    }, [firestore, userId]);
+        if (!firestore) return null;
+        // Fetch ALL posts to avoid a filter-based query that causes a misleading permission error
+        // when the required composite index is missing. We will filter on the client.
+        return query(collection(firestore, 'posts'));
+    }, [firestore]);
 
     const { data: allPosts, isLoading: arePostsLoading } = useCollection<Post>(postsQuery);
 
     const posts = useMemo(() => {
-        if (!allPosts) return [];
-        // We only want to show posts that have an image on the profile page.
+        if (!allPosts || !userId) return [];
+        // We only want to show posts by the current profile's user that have an image.
         // Also sort them by creation date, newest first.
         return allPosts
-            .filter(post => post.imageUrl)
+            .filter(post => post.userId === userId && post.imageUrl)
             .sort((a, b) => {
                 if (a.createdAt?.toMillis && b.createdAt?.toMillis) {
                     return b.createdAt.toMillis() - a.createdAt.toMillis();
                 }
                 return 0;
             });
-    }, [allPosts]);
+    }, [allPosts, userId]);
 
     if (isProfileLoading || !profile || !currentUserProfile) {
         return (
