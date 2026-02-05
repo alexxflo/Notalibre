@@ -33,6 +33,7 @@ export interface Post {
   likes: string[];
   commentCount: number;
   createdAt?: Timestamp;
+  visibility: 'public' | 'private';
 }
 
 export interface Comment {

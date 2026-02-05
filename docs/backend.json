@@ -95,6 +95,14 @@
         "createdAt": {
           "type": "string",
           "description": "Timestamp when the post was created."
+        },
+        "visibility": {
+          "type": "string",
+          "description": "The visibility of the post ('public' or 'private').",
+          "enum": [
+            "public",
+            "private"
+          ]
         }
       },
       "required": [
@@ -104,7 +112,8 @@
         "text",
         "likes",
         "commentCount",
-        "createdAt"
+        "createdAt",
+        "visibility"
       ]
     },
     "Comment": {

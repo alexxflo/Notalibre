@@ -90,6 +90,7 @@ export default function PostForm({ userProfile }: PostFormProps) {
                 likes: [],
                 commentCount: 0,
                 createdAt: serverTimestamp(),
+                visibility: 'public',
             });
 
             setText('');

@@ -22,14 +22,18 @@ export default function MainFeed({ userProfile }: { userProfile: UserProfile }) 
   // Sort posts on the client-side as a workaround.
   const sortedPosts = useMemo(() => {
     if (!posts) return [];
-    return [...posts].sort((a, b) => {
+
+    // Filter posts to show public posts, or private posts belonging to the current user
+    const filteredPosts = posts.filter(p => p.visibility === 'public' || p.userId === userProfile.id);
+
+    return filteredPosts.sort((a, b) => {
       // Ensure createdAt exists and is a Timestamp before comparing
       if (a.createdAt?.toMillis && b.createdAt?.toMillis) {
         return b.createdAt.toMillis() - a.createdAt.toMillis();
       }
       return 0; // Keep original order if timestamps are not available
     });
-  }, [posts]);
+  }, [posts, userProfile.id]);
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-8">

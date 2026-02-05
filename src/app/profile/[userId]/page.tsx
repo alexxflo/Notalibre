@@ -101,19 +101,25 @@ export default function ProfilePage() {
 
     const { data: allPosts, isLoading: arePostsLoading } = useCollection<Post>(postsQuery);
 
+    const isOwnProfile = currentUser?.uid === userId;
+
     const posts = useMemo(() => {
         if (!allPosts || !userId) return [];
-        // We only want to show posts by the current profile's user that have an image.
-        // Also sort them by creation date, newest first.
-        return allPosts
-            .filter(post => post.userId === userId && post.imageUrl)
-            .sort((a, b) => {
+        
+        const profilePosts = allPosts.filter(post => post.userId === userId && post.imageUrl);
+
+        const visiblePosts = isOwnProfile 
+            ? profilePosts // Show all posts on own profile
+            : profilePosts.filter(post => post.visibility === 'public'); // Show only public posts on others' profiles
+
+        // Sort posts by creation date, newest first.
+        return visiblePosts.sort((a, b) => {
                 if (a.createdAt?.toMillis && b.createdAt?.toMillis) {
                     return b.createdAt.toMillis() - a.createdAt.toMillis();
                 }
                 return 0;
             });
-    }, [allPosts, userId]);
+    }, [allPosts, userId, isOwnProfile]);
 
     if (isProfileLoading || !profile || !currentUserProfile) {
         return (
