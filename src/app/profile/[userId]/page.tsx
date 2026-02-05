@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import { useMemo, useEffect, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, collection, query, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Post } from '@/types';
 import { Loader2, Users, UserCheck, MessageSquare } from 'lucide-react';
@@ -17,11 +17,16 @@ import { useToast } from '@/hooks/use-toast';
 function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, currentUserProfile: UserProfile | null }) {
     const firestore = useFirestore();
     const { toast } = useToast();
+    
+    // Default to false if there's no current user profile
     const isFollowing = currentUserProfile?.following?.includes(profile.id) ?? false;
     const isOwnProfile = currentUserProfile?.id === profile.id;
 
     const handleFollowToggle = () => {
-        if (!currentUserProfile) return;
+        if (!currentUserProfile) {
+            toast({ variant: 'destructive', description: 'Necesitas iniciar sesión para seguir a alguien.' });
+            return;
+        }
 
         // Prevent following yourself
         if (isOwnProfile) {
@@ -88,15 +93,31 @@ function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, 
 
 export default function ProfilePage() {
     const params = useParams();
+    const router = useRouter();
     const userId = params.userId as string;
     const firestore = useFirestore();
     const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
+
+    // --- Start of Logout Handling Logic ---
+    const previousUserRef = useRef(currentUser);
+
+    useEffect(() => {
+        // If we had a user before, but not anymore (and auth is done loading), it's a sign-out event.
+        if (previousUserRef.current && !currentUser && !isAuthLoading) {
+            // Redirect to the home page, which will then correctly show the sign-in page.
+            router.push('/');
+        }
+        // Update the ref for the next render cycle.
+        previousUserRef.current = currentUser;
+    }, [currentUser, isAuthLoading, router]);
+    // --- End of Logout Handling Logic ---
+
 
     const profileRef = useMemoFirebase(() => userId ? doc(firestore, 'users', userId) : null, [firestore, userId]);
     const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(profileRef);
 
     const currentUserProfileRef = useMemoFirebase(() => currentUser ? doc(firestore, 'users', currentUser.uid) : null, [firestore, currentUser]);
-    const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
+    const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } = useDoc<UserProfile>(currentUserProfileRef);
 
     const postsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -127,7 +148,22 @@ export default function ProfilePage() {
             });
     }, [allPosts, userId, isOwnProfile]);
 
-    const isLoading = isAuthLoading || isProfileLoading;
+    // This is the "in-between" state when a user signs out.
+    // We show a loader while the redirect to the home page is happening.
+    if (!isAuthLoading && !currentUser && previousUserRef.current) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                <p className="ml-4 text-slate-300">Cerrando sesión...</p>
+            </div>
+        );
+    }
+    
+    // Consolidated loading state. Show loader if...
+    // 1. Authentication state is loading.
+    // 2. The profile for the page is loading.
+    // 3. A user is logged in, but their own profile data is still loading.
+    const isLoading = isAuthLoading || isProfileLoading || (!!currentUser && isCurrentUserProfileLoading);
 
     if (isLoading) {
         return (
@@ -141,18 +177,6 @@ export default function ProfilePage() {
         return (
            <div className="flex items-center justify-center min-h-screen">
                 <p className="text-xl text-slate-400">Este perfil no existe.</p>
-           </div>
-       );
-   }
-
-   // This handles the transitional states for login and logout to prevent crashes.
-   // Login: `currentUser` exists, but `currentUserProfile` is not yet loaded.
-   // Logout: `currentUser` is null, but `currentUserProfile` might still hold stale data for one render cycle.
-   if ((currentUser && !currentUserProfile) || (!currentUser && currentUserProfile)) {
-       return (
-           <div className="flex items-center justify-center min-h-screen">
-               <Loader2 className="h-16 w-16 animate-spin text-primary" />
-               <p className="ml-4 text-slate-300">Actualizando sesión...</p>
            </div>
        );
    }
