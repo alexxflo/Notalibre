@@ -1,8 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Esta línea es la clave: el {document=**} aplica a CUALQUIER colección o subcolección
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
+    
   }
 }
