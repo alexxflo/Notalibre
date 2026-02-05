@@ -9,44 +9,45 @@ service cloud.firestore {
 
     // --- User Collection/Document Rules ---
     match /users/{userId} {
-      // Allow any authenticated user to list users for the F/F feature.
-      allow list: if request.auth != null;
+      allow list, get: if request.auth != null;
+      allow write: if isAdmin() || request.auth.uid == userId;
       
-      // Admin can get any user profile and write to it.
-      allow write: if isAdmin();
-
-      // A user can create their own profile
-      allow create: if request.auth.uid == userId;
-
-      // A user can get their own profile
-      allow get: if request.auth.uid == userId;
-
-      // A user can update their OWN profile, but cannot change their followers list manually.
-      allow update: if request.auth.uid == userId &&
-                      request.resource.data.followers == resource.data.followers;
-      
-      // Any other authenticated user can update ONLY the followers field by ensuring
-      // that all other core profile fields remain unchanged.
+      // Allow a user to follow/unfollow another user
       allow update: if request.auth != null && request.auth.uid != userId &&
-                      request.resource.data.username == resource.data.username &&
-                      request.resource.data.email == resource.data.email &&
-                      request.resource.data.avatarUrl == resource.data.avatarUrl &&
-                      request.resource.data.coinBalance == resource.data.coinBalance &&
-                      request.resource.data.gatekeeperPassed == resource.data.gatekeeperPassed &&
-                      request.resource.data.isBlocked == resource.data.isBlocked &&
-                      request.resource.data.interactedFlogIds == resource.data.interactedFlogIds &&
-                      request.resource.data.following == resource.data.following;
-
-      // The unauthenticated bot can read any user profile for processing
-      allow get: if request.auth == null;
-      
-      // The unauthenticated bot can update a user's coin balance, but nothing else.
-      allow update: if request.auth == null
-                    && request.resource.data.username == resource.data.username
-                    && request.resource.data.email == resource.data.email
-                    && request.resource.data.avatarUrl == resource.data.avatarUrl
-                    && request.resource.data.gatekeeperPassed == resource.data.gatekeeperPassed;
+                      (
+                        (request.resource.data.followers.diff(resource.data.followers).addedKeys().hasOnly([request.auth.uid]) &&
+                         request.resource.data.followers.diff(resource.data.followers).removedKeys().size() == 0) ||
+                        (request.resource.data.followers.diff(resource.data.followers).removedKeys().hasOnly([request.auth.uid]) &&
+                         request.resource.data.followers.diff(resource.data.followers).addedKeys().size() == 0)
+                      );
     }
+    
+    // --- Post Collection Rules ---
+    match /posts/{postId} {
+      allow read: if request.auth != null;
+      
+      // Users can create posts for themselves
+      allow create: if request.auth.uid == request.resource.data.userId;
+      
+      // Allow users to delete their own posts
+      allow delete: if resource.data.userId == request.auth.uid;
+      
+      // Allow post author to edit their post, or any user to update the likes
+      allow update: if (resource.data.userId == request.auth.uid) ||
+                      (request.resource.data.keys().hasOnly(['likes']));
+    }
+
+    // --- Comment Sub-collection Rules ---
+    match /posts/{postId}/comments/{commentId} {
+      allow read: if request.auth != null;
+      
+      // Users can create comments for themselves
+      allow create: if request.auth.uid == request.resource.data.userId;
+      
+      // Allow comment author or post author to delete comments
+      allow delete: if request.auth.uid == resource.data.userId || request.auth.uid == get(/databases/$(database)/documents/posts/$(postId)).data.userId;
+    }
+
 
     // --- Campaign Rules ---
     match /campaigns/{campaignId} {
@@ -54,9 +55,7 @@ service cloud.firestore {
         allow read: if request.auth != null;
         // A user can create a campaign for themselves
         allow create: if request.auth.uid == request.resource.data.userId;
-        // Any authenticated user can delete (claim) a campaign. This allows
-        // the "follow-to-earn" feature to work, as the user who follows
-        // is the one who deletes the campaign document.
+        // Any authenticated user can delete (claim) a campaign.
         allow delete: if request.auth != null;
     }
 
@@ -65,11 +64,8 @@ service cloud.firestore {
         // Authenticated users can create their own verification requests
         allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
         
-        // The unauthenticated bot can read any verification
-        allow get: if request.auth == null;
-        
-        // The unauthenticated bot can update the status of a pending verification
-        allow update: if request.auth == null && resource.data.status == 'pending';
+        // The unauthenticated bot can read and update
+        allow get, update: if request.auth == null;
     }
 
     // --- Stats Rules ---
@@ -86,34 +82,6 @@ service cloud.firestore {
         allow read: if request.auth != null;
         // Any authenticated user can send a message, but they must be the author
         allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-    }
-
-    // --- Vortex-Flog Rules ---
-    match /flogs/{userId} {
-      // Any authenticated user can read any flog profile
-      allow read: if request.auth != null;
-      
-      // A user can write to their own flog profile
-      allow write: if request.auth.uid == userId;
-      
-      // This rule allows non-owners to update ONLY the counter fields.
-      // It inspects the incoming request and ensures it only contains keys
-      // for the allowed counter fields. This is the robust way to handle
-      // partial, secure updates like increments.
-      allow update: if request.auth != null && request.auth.uid != userId &&
-                      request.resource.data.keys().hasOnly(['likes', 'dislikes', 'followerCount']);
-    }
-    
-    match /flogs/{userId}/signatures/{signatureId} {
-      // Any authenticated user can read signatures
-      allow list, read: if request.auth != null;
-
-      // Any authenticated user can write a signature on any flog
-      allow create: if request.auth != null
-                    && request.resource.data.authorId == request.auth.uid;
-
-      // The Flog's owner can delete signatures on their own wall
-      allow delete: if request.auth.uid == userId;
     }
   }
 }

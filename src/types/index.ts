@@ -19,10 +19,32 @@ export interface UserProfile {
   coinBalance: number;
   gatekeeperPassed: boolean;
   isBlocked?: boolean;
-  interactedFlogIds?: string[];
   following?: string[];
   followers?: string[];
 }
+
+export interface Post {
+  id: string;
+  userId: string;
+  username: string;
+  avatarUrl: string;
+  text: string;
+  imageUrl?: string;
+  likes: string[];
+  commentCount: number;
+  createdAt: Timestamp;
+}
+
+export interface Comment {
+  id: string;
+  postId: string;
+  userId: string;
+  username: string;
+  avatarUrl: string;
+  text: string;
+  createdAt: Timestamp;
+}
+
 
 export interface DailyStats {
     count: number;
@@ -34,28 +56,6 @@ export interface ChatMessage {
   userId: string;
   username: string;
   avatarUrl: string;
-  text: string;
-  createdAt: Timestamp;
-}
-
-export interface FlogProfile {
-  id: string; // Firestore document ID
-  userId: string;
-  username: string;
-  mainPhotoUrl: string;
-  description: string;
-  lastPhotoUpdate: Timestamp;
-  themeColor: 'cyan' | 'magenta' | 'lime';
-  likes: number;
-  dislikes: number;
-  followerCount?: number;
-}
-
-export interface FlogSignature {
-  id: string; // Firestore document ID
-  authorId: string;
-  authorUsername: string;
-  authorAvatar: string;
   text: string;
   createdAt: Timestamp;
 }

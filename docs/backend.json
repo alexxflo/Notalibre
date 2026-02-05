@@ -31,26 +31,19 @@
           "type": "boolean",
           "description": "Whether the user is blocked from using the application."
         },
-        "interactedFlogIds": {
-            "type": "array",
-            "description": "An array of Flog user IDs that this user has already interacted with (liked or disliked).",
-            "items": {
-                "type": "string"
-            }
-        },
         "following": {
-            "type": "array",
-            "description": "Array of user IDs this user is following.",
-            "items": {
-                "type": "string"
-            }
+          "type": "array",
+          "description": "Array of user IDs this user is following.",
+          "items": {
+            "type": "string"
+          }
         },
         "followers": {
-            "type": "array",
-            "description": "Array of user IDs who are following this user.",
-            "items": {
-                "type": "string"
-            }
+          "type": "array",
+          "description": "Array of user IDs who are following this user.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
@@ -59,6 +52,99 @@
         "avatarUrl",
         "coinBalance",
         "gatekeeperPassed"
+      ]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "Represents a single post made by a user in the main feed.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who created the post."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the post creator."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the post creator's avatar."
+        },
+        "text": {
+          "type": "string",
+          "description": "The text content of the post."
+        },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "An optional URL for an image attached to the post."
+        },
+        "likes": {
+          "type": "array",
+          "description": "An array of user IDs who have liked the post.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "commentCount": {
+          "type": "number",
+          "description": "The total number of comments on the post."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the post was created."
+        }
+      },
+      "required": [
+        "userId",
+        "username",
+        "avatarUrl",
+        "text",
+        "likes",
+        "commentCount",
+        "createdAt"
+      ]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Represents a single comment on a post.",
+      "type": "object",
+      "properties": {
+        "postId": {
+          "type": "string",
+          "description": "The ID of the post this comment belongs to."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who wrote the comment."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the comment author."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the comment author's avatar."
+        },
+        "text": {
+          "type": "string",
+          "description": "The content of the comment."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the comment was created."
+        }
+      },
+      "required": [
+        "postId",
+        "userId",
+        "username",
+        "avatarUrl",
+        "text",
+        "createdAt"
       ]
     },
     "Stats": {
@@ -203,92 +289,6 @@
         "text",
         "createdAt"
       ]
-    },
-    "FlogProfile": {
-      "title": "FlogProfile",
-      "description": "Represents a user's profile in the Vortex-Flog section.",
-      "type": "object",
-      "properties": {
-        "userId": {
-          "type": "string",
-          "description": "The UID of the user who owns this Flog."
-        },
-        "username": {
-          "type": "string",
-          "description": "The user's display name, synced from their main profile."
-        },
-        "mainPhotoUrl": {
-          "type": "string",
-          "format": "uri",
-          "description": "URL of the user's main Flog photo."
-        },
-        "description": {
-          "type": "string",
-          "description": "The description text displayed under the photo."
-        },
-        "lastPhotoUpdate": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of the last time the main photo was updated."
-        },
-        "themeColor": {
-          "type": "string",
-          "description": "The primary neon color for the user's Flog theme (e.g., 'cyan', 'magenta', 'lime')."
-        },
-        "likes": {
-            "type": "number",
-            "description": "The number of likes the main photo has received."
-        },
-        "dislikes": {
-            "type": "number",
-            "description": "The number of dislikes the main photo has received."
-        },
-        "followerCount": {
-            "type": "number",
-            "description": "The number of users following this flog."
-        }
-      },
-      "required": [
-        "userId",
-        "username",
-        "likes",
-        "dislikes"
-      ]
-    },
-    "FlogSignature": {
-      "title": "FlogSignature",
-      "description": "Represents a single signature/comment in a user's Flog guestbook.",
-      "type": "object",
-      "properties": {
-        "authorId": {
-          "type": "string",
-          "description": "The UID of the user who wrote the signature."
-        },
-        "authorUsername": {
-          "type": "string",
-          "description": "The display name of the author."
-        },
-        "authorAvatar": {
-          "type": "string",
-          "format": "uri",
-          "description": "URL of the author's avatar."
-        },
-        "text": {
-          "type": "string",
-          "description": "The content of the signature."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the signature was written."
-        }
-      },
-      "required": [
-        "authorId",
-        "authorUsername",
-        "authorAvatar",
-        "text",
-        "createdAt"
-      ]
     }
   },
   "auth": {
@@ -302,6 +302,18 @@
         "$ref": "#/entities/UserProfile"
       },
       "description": "Stores user profile data. The 'userId' parameter corresponds to the authenticated user's UID, ensuring path-based ownership."
+    },
+    "/posts/{postId}": {
+      "schema": {
+        "$ref": "#/entities/Post"
+      },
+      "description": "Stores individual posts created by users, forming the main social feed."
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": {
+        "$ref": "#/entities/Comment"
+      },
+      "description": "Stores comments for a specific post."
     },
     "/stats/users": {
       "schema": {
@@ -332,18 +344,6 @@
         "$ref": "#/entities/ChatMessage"
       },
       "description": "Stores global chat messages. Sorted by creation time."
-    },
-    "/flogs/{userId}": {
-      "schema": {
-        "$ref": "#/entities/FlogProfile"
-      },
-      "description": "Stores user data for the Vortex-Flog section. The 'userId' corresponds to the user's UID."
-    },
-    "/flogs/{userId}/signatures/{signatureId}": {
-      "schema": {
-        "$ref": "#/entities/FlogSignature"
-      },
-      "description": "Stores guestbook signatures for a user's Flog. Sorted by creation time."
     }
   }
 }
