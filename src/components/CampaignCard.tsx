@@ -29,15 +29,19 @@ export default function CampaignCard({ campaign, availableFollows, campaignIds, 
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (status === 'pending' && countdown > 0) {
-      timer = setInterval(() => {
-        setCountdown((prev) => prev - 1);
-      }, 1000);
-    } else if (countdown === 0 && status === 'pending') {
-      setStatus('claimable');
-      clearInterval(timer);
+    if (status !== 'pending') {
+      return;
     }
+    
+    if (countdown === 0) {
+      setStatus('claimable');
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
     return () => clearInterval(timer);
   }, [status, countdown]);
 
