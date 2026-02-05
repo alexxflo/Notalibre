@@ -8,7 +8,7 @@ export interface Campaign {
   url: string;
   reward: number;
   avatarUrl: string;
-  createdAt: Timestamp;
+  createdAt?: Timestamp;
 }
 
 export interface UserProfile {
@@ -32,7 +32,7 @@ export interface Post {
   imageUrl?: string;
   likes: string[];
   commentCount: number;
-  createdAt: Timestamp;
+  createdAt?: Timestamp;
 }
 
 export interface Comment {
@@ -42,7 +42,7 @@ export interface Comment {
   username: string;
   avatarUrl: string;
   text: string;
-  createdAt: Timestamp;
+  createdAt?: Timestamp;
 }
 
 
@@ -57,5 +57,5 @@ export interface ChatMessage {
   username: string;
   avatarUrl: string;
   text: string;
-  createdAt: Timestamp;
+  createdAt?: Timestamp;
 }
