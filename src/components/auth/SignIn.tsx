@@ -60,22 +60,24 @@ export default function SignIn() {
       }
     } catch (error) {
       const authError = error as AuthError;
+      
+      let title = 'Error de Autenticación';
+      let description = authError.message || 'Ocurrió un error al intentar iniciar sesión.';
 
-      if (authError.code === 'auth/operation-not-allowed') {
-        toast({
-          variant: 'destructive',
-          title: 'Error de Configuración',
-          description:
-            'El inicio de sesión con Google no está habilitado. Por favor, actívalo en la consola de Firebase.',
-        });
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error de Autenticación',
-          description:
-            authError.message || 'Ocurrió un error al intentar iniciar sesión.',
-        });
+      if (authError.code === 'auth/unauthorized-domain') {
+        title = 'Dominio no Autorizado';
+        description = `El dominio de esta aplicación no ha sido autorizado. Ve a tu Consola de Firebase > Authentication > Settings > Authorized domains y añade el dominio.`;
+      } else if (authError.code === 'auth/operation-not-allowed') {
+        title = 'Error de Configuración';
+        description = 'El inicio de sesión con Google no está habilitado. Por favor, actívalo en la consola de Firebase.';
       }
+
+      toast({
+        variant: 'destructive',
+        title: title,
+        description: description,
+        duration: 9000, // Give more time to read the instructions
+      });
     }
   };
 

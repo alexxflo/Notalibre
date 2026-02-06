@@ -3,10 +3,15 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     match /users/{userId} {
-      // Los perfiles de usuario son de lectura pública, pero solo el propietario puede escribir en ellos.
-      // Esto corrige el error de inicio de sesión, pero desactiva temporalmente la función de seguir.
+      // Los perfiles de usuario son de lectura pública.
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Un usuario solo puede crear su propio perfil.
+      allow create: if request.auth != null && request.auth.uid == userId;
+
+      // Un usuario solo puede actualizar o eliminar su propio perfil.
+      // NOTA: Esto se revisará más adelante para permitir la función de 'seguir'.
+      allow update, delete: if request.auth != null && request.auth.uid == userId;
       
       // Las notificaciones son privadas para el usuario.
       match /notifications/{notificationId} {
