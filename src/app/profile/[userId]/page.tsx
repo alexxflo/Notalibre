@@ -3,24 +3,27 @@
 import { useMemo, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Post } from '@/types';
-import { Loader2, Users, UserCheck, MessageSquare, Camera } from 'lucide-react';
+import { Loader2, Users, UserCheck, MessageSquare, Camera, Pencil, Check, X } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PostCard from '@/components/posts/PostCard';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import PrivateChat from '@/components/PrivateChat';
 
-function ProfileHeader({ profile, currentUserProfile, onSendMessageClick }: { profile: UserProfile, currentUserProfile: UserProfile | null, onSendMessageClick?: () => void }) {
+function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, currentUserProfile: UserProfile | null }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isEditingUsername, setIsEditingUsername] = useState(false);
+    const [newUsername, setNewUsername] = useState(profile.username);
     
     const isOwnProfile = currentUserProfile?.id === profile.id;
     const isFollowing = currentUserProfile?.following?.includes(profile.id) ?? false;
@@ -96,6 +99,20 @@ function ProfileHeader({ profile, currentUserProfile, onSendMessageClick }: { pr
         reader.readAsDataURL(file);
     };
 
+    const handleUsernameSave = () => {
+        const trimmedUsername = newUsername.trim();
+        if (!trimmedUsername) {
+            toast({ variant: 'destructive', description: "El nombre de usuario no puede estar vacío." });
+            return;
+        }
+        if (trimmedUsername !== profile.username) {
+            const userDocRef = doc(firestore, 'users', profile.id);
+            updateDocumentNonBlocking(userDocRef, { username: trimmedUsername });
+            toast({ description: "Nombre de usuario actualizado." });
+        }
+        setIsEditingUsername(false);
+    };
+
     const handleFollowToggle = () => {
         if (!currentUserProfile) {
             toast({ variant: 'destructive', description: 'Necesitas iniciar sesión para seguir a alguien.' });
@@ -166,7 +183,29 @@ function ProfileHeader({ profile, currentUserProfile, onSendMessageClick }: { pr
                 accept="image/png, image/jpeg, image/gif, image/webp"
             />
             <div className="flex-grow text-center md:text-left">
-                <h1 className="text-3xl font-bold text-white font-headline">{profile.username}</h1>
+                {isOwnProfile ? (
+                    <div className="flex items-center gap-2 justify-center md:justify-start">
+                        {isEditingUsername ? (
+                        <>
+                            <Input 
+                                value={newUsername} 
+                                onChange={(e) => setNewUsername(e.target.value)} 
+                                className="text-3xl font-bold text-white font-headline bg-slate-800 border-slate-600 h-12"
+                                onKeyDown={(e) => e.key === 'Enter' && handleUsernameSave()}
+                            />
+                            <Button onClick={handleUsernameSave} size="icon"><Check className="h-5 w-5" /></Button>
+                            <Button onClick={() => { setIsEditingUsername(false); setNewUsername(profile.username); }} variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
+                        </>
+                        ) : (
+                        <>
+                            <h1 className="text-3xl font-bold text-white font-headline">{profile.username}</h1>
+                            <Button onClick={() => setIsEditingUsername(true)} variant="ghost" size="icon"><Pencil className="h-5 w-5 text-slate-400 hover:text-white" /></Button>
+                        </>
+                        )}
+                    </div>
+                ) : (
+                     <h1 className="text-3xl font-bold text-white font-headline">{profile.username}</h1>
+                )}
                 <p className="text-slate-400">{profile.email}</p>
                 <div className="flex gap-6 justify-center md:justify-start mt-4">
                     <div className="text-center">
@@ -185,10 +224,12 @@ function ProfileHeader({ profile, currentUserProfile, onSendMessageClick }: { pr
                         {isFollowing ? <UserCheck className="mr-2"/> : <Users className="mr-2"/>}
                         {isFollowing ? 'Siguiendo' : 'Seguir'}
                     </Button>
-                    <Button variant="outline" onClick={onSendMessageClick}>
-                        <MessageSquare className="mr-2" />
-                        Enviar Mensaje
-                    </Button>
+                    <Link href={`/messages?chatWith=${profile.id}`}>
+                        <Button variant="outline" className="w-full">
+                            <MessageSquare className="mr-2" />
+                            Enviar Mensaje
+                        </Button>
+                    </Link>
                 </div>
             )}
         </div>
@@ -201,7 +242,6 @@ export default function ProfilePage() {
     const userId = params.userId as string;
     const firestore = useFirestore();
     const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
-    const [isChatOpen, setIsChatOpen] = useState(false);
 
     // --- Start of Logout Handling Logic ---
     const previousUserRef = useRef(currentUser);
@@ -290,7 +330,7 @@ export default function ProfilePage() {
         <div className="min-h-screen flex flex-col">
             <Header coinBalance={currentUserProfile?.coinBalance ?? 0}/>
             <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center gap-8">
-                <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} onSendMessageClick={() => setIsChatOpen(true)} />
+                <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} />
                 <h2 className="text-2xl font-headline text-white self-start max-w-4xl w-full">Publicaciones con Imagen</h2>
                 <div className="w-full max-w-2xl space-y-6">
                     {arePostsLoading ? (
@@ -307,15 +347,9 @@ export default function ProfilePage() {
                     )}
                 </div>
             </main>
-            {currentUserProfile && !isOwnProfile && (
-                <PrivateChat
-                    currentUser={currentUserProfile}
-                    targetUser={profile}
-                    open={isChatOpen}
-                    onOpenChange={setIsChatOpen}
-                />
-            )}
             <Footer />
         </div>
     );
 }
+
+    

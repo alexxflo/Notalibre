@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from './ui/button';
 import CoinBalance from './CoinBalance';
-import { User } from 'lucide-react';
+import { User, MessageSquare } from 'lucide-react';
 import { useUser } from '@/firebase';
 import UserMenu from './auth/UserMenu';
 import { Skeleton } from './ui/skeleton';
@@ -38,6 +38,12 @@ export default function Header({ coinBalance }: HeaderProps) {
                   <Button variant="ghost" size="sm" className="text-yellow-400 hover:bg-yellow-900/50 hover:text-yellow-300 uppercase shrink-0 p-2 md:px-3">
                     <User className="h-4 w-4 md:mr-2" />
                     <span className="hidden md:inline">Mi Perfil</span>
+                  </Button>
+                </Link>
+                <Link href="/messages" passHref>
+                  <Button variant="ghost" size="sm" className="text-slate-300 hover:bg-slate-800/50 hover:text-white uppercase shrink-0 p-2 md:px-3">
+                    <MessageSquare className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Mensajes</span>
                   </Button>
                 </Link>
                 <CoinBalance balance={coinBalance} />

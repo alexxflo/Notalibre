@@ -81,6 +81,13 @@ export interface Chat {
     senderId: string;
     createdAt: Timestamp;
   };
+  // Add participant details for easy access in the UI
+  participants: {
+    [key: string]: {
+      username: string;
+      avatarUrl: string;
+    }
+  };
 }
 
 export interface PrivateMessage {
@@ -91,3 +98,5 @@ export interface PrivateMessage {
   text: string;
   createdAt?: Timestamp;
 }
+
+    
