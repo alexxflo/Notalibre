@@ -2,16 +2,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // User profiles are publicly readable.
-    // Only the owner can write to their own profile.
     match /users/{userId} {
+      // User profiles are publicly readable.
+      // Only the owner can write to their own profile.
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Private messages for a user.
-    match /users/{userId}/messages/{messageId} {
+      
+      // Notifications are private to the user.
+      match /notifications/{notificationId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Private messages for a user.
+      match /messages/{messageId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     // Posts and their comments are publicly readable.
