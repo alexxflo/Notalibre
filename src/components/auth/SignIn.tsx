@@ -22,12 +22,24 @@ export default function SignIn() {
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     try {
+      // This check is important as useAuth() and useFirestore() can return null initially
+      if (!auth || !firestore) {
+        toast({
+          variant: "destructive",
+          title: "Error de Inicialización",
+          description: "Los servicios de Firebase no están disponibles. Por favor, refresca la página e inténtalo de nuevo.",
+        });
+        return;
+      }
+      
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
+      // After successful authentication, check for user profile
       const userDocRef = doc(firestore, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
 
+      // If the user profile doesn't exist, create it
       if (!docSnap.exists()) {
         const newUserProfile = {
           username: user.displayName || 'Usuario Anónimo',
@@ -40,12 +52,12 @@ export default function SignIn() {
           followers: [],
         };
         
-        // Using await for a synchronous, predictable flow.
+        // Await the profile creation to ensure it completes before proceeding
+        // or fails within this try...catch block.
         await setDoc(userDocRef, newUserProfile);
-
-        const statsRef = doc(firestore, 'stats', 'users');
-        // Also awaiting this to ensure it completes or fails within the try block.
-        await setDoc(statsRef, { count: increment(1) }, { merge: true });
+        
+        // NOTE: The logic to update the global user count has been removed from this critical path
+        // to minimize potential points of failure during the initial sign-in.
         
         toast({
           title: '¡Bienvenido a VORTEX!',
@@ -53,6 +65,7 @@ export default function SignIn() {
         });
 
       } else {
+        // If the profile already exists, just welcome them back
         const userData = docSnap.data();
         toast({
           title: `¡Bienvenido de vuelta, ${userData?.username || 'Usuario'}!`,
@@ -60,16 +73,18 @@ export default function SignIn() {
         });
       }
     } catch (error: any) {
-      console.error("Sign-in failed:", error); // Log the full error for my debugging.
+      // Log the full error for debugging in the development console
+      console.error("Sign-in failed:", error);
 
+      // Default error messages
       let title = 'Error Inesperado';
       let description = error.message || 'Ocurrió un error al intentar iniciar sesión.';
 
-      // Check for a specific error code to provide better user feedback.
+      // Provide more specific feedback based on the error code
       if (error.code) {
         switch(error.code) {
           case 'auth/popup-closed-by-user':
-            // Don't show an error toast if the user intentionally closes the popup.
+            // This is a user action, not an error. Don't show a toast.
             return;
           case 'auth/unauthorized-domain':
             title = 'Dominio no Autorizado';
@@ -79,16 +94,17 @@ export default function SignIn() {
             title = 'Error de Configuración';
             description = 'El inicio de sesión con Google no está habilitado. Por favor, actívalo en la consola de Firebase.';
             break;
-          case 'permission-denied': // This will catch Firestore security rule errors
+          case 'permission-denied': // This will catch Firestore security rule errors during setDoc/getDoc
             title = 'Error de Permisos';
-            description = 'No se pudo crear tu perfil de usuario. Revisa las reglas de seguridad de Firestore. (Error: permission-denied)';
+            description = 'No se pudo leer o escribir tu perfil de usuario. Por favor, revisa las reglas de seguridad de Firestore. (Error: permission-denied)';
             break;
           default:
-            // For any other coded error, display the code.
+            // For any other Firebase-specific error, show the code
             description = `${error.message} (código: ${error.code})`;
         }
       }
 
+      // Display the final error toast
       toast({
         variant: 'destructive',
         title: title,
