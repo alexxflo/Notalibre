@@ -54,5 +54,17 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && 
         (resource.data.authorId == request.auth.uid || resource.data.userId == request.auth.uid);
     }
+
+    // REGLAS PARA CAMPAÑAS
+    match /campaigns/{campaignId} {
+      // Cualquiera puede leer la lista de campañas para participar
+      allow read: if request.auth != null;
+
+      // Cualquiera puede crear una campaña (la lógica de costo está en el cliente)
+      allow create: if request.auth != null;
+
+      // Cualquiera puede borrar una campaña para "reclamarla".
+      allow delete: if request.auth != null;
+    }
   }
 }
