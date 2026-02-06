@@ -5,13 +5,12 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  projectId: "salvafans",
-  appId: "1:1071465839463:web:03f74352ac9695d73315a0",
-  apiKey: "AIzaSyDEjmuSke21FhIqGqNn2prMtkFR-5MvRS4",
-  authDomain: "salvafans.firebaseapp.com",
-  measurementId: "G-F889T3E7PV",
-  messagingSenderId: "1071465839463",
-  storageBucket: "salvafans.appspot.com",
+  apiKey: "AIzaSyDWUR7HC6dZp3DcsrnSjz2JPrBCDmM5yCs",
+  authDomain: "studio-8356722446-5a6c6.firebaseapp.com",
+  projectId: "studio-8356722446-5a6c6",
+  storageBucket: "studio-8356722446-5a6c6.firebasestorage.app",
+  messagingSenderId: "894641861323",
+  appId: "1:894641861323:web:2ac2dea31786d0badae14e"
 };
 
 export function initializeFirebase() {
