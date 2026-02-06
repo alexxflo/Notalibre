@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, doc, setDoc, getDoc, getDocs } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Chat, PrivateMessage } from '@/types';
@@ -29,7 +29,7 @@ function MessagesContent() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const currentUserProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-  const { data: currentUserProfile } = useCollection<UserProfile>(currentUserProfileRef);
+  const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
 
   // Query to get all chats the user is a part of, without ordering.
   // This avoids the need for a composite index in Firestore.
