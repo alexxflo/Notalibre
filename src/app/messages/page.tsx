@@ -92,24 +92,18 @@ function MessagesContent() {
 
     const chatId = [user.uid, targetUser.id].sort().join('_');
     const chatRef = doc(firestore, 'chats', chatId);
-    const chatSnap = await getDoc(chatRef);
     
     const participantsData = {
         [user.uid]: { username: currentUserProfile.username, avatarUrl: currentUserProfile.avatarUrl },
         [targetUser.id]: { username: targetUser.username, avatarUrl: targetUser.avatarUrl },
     };
 
-    if (!chatSnap.exists()) {
-      await setDoc(chatRef, {
-        participantIds: [user.uid, targetUser.id],
-        participants: participantsData,
-      });
-    } else if (!chatSnap.data()?.participants) {
-      // If chat exists but without the participants map, update it.
-      await updateDoc(chatRef, {
-        participants: participantsData
-      });
-    }
+    // Use setDoc with merge:true. This will create the chat if it doesn't exist,
+    // or merge the fields if it does. This avoids the problematic `getDoc` call.
+    await setDoc(chatRef, {
+      participantIds: [user.uid, targetUser.id],
+      participants: participantsData,
+    }, { merge: true });
 
     setSelectedChat({ id: chatId, otherParticipant: targetUser });
     setSearchQuery('');
