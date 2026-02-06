@@ -357,6 +357,40 @@
         "read",
         "createdAt"
       ]
+    },
+    "Chat": {
+        "title": "Chat",
+        "description": "Represents a private chat session between two or more users.",
+        "type": "object",
+        "properties": {
+            "participantIds": {
+                "type": "array",
+                "description": "Array of user UIDs participating in the chat.",
+                "items": { "type": "string" }
+            },
+            "lastMessage": {
+                "type": "object",
+                "properties": {
+                    "text": { "type": "string" },
+                    "senderId": { "type": "string" },
+                    "createdAt": { "type": "string" }
+                }
+            }
+        },
+        "required": ["participantIds"]
+    },
+    "PrivateMessage": {
+      "title": "PrivateMessage",
+      "description": "Represents a single private message between two users.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string", "description": "The UID of the user who sent the message." },
+        "senderUsername": { "type": "string", "description": "The username of the sender." },
+        "senderAvatarUrl": { "type": "string", "description": "URL of the sender's avatar." },
+        "text": { "type": "string", "description": "The content of the message." },
+        "createdAt": { "type": "string", "description": "Timestamp when the message was sent." }
+      },
+      "required": ["senderId", "senderUsername", "senderAvatarUrl", "text", "createdAt"]
     }
   },
   "auth": {
@@ -375,7 +409,7 @@
       "schema": {
         "$ref": "#/entities/ChatMessage"
       },
-      "description": "Stores private chat messages for a specific user."
+      "description": "Stores private chat messages for a specific user (support chat)."
     },
     "/users/{userId}/notifications/{notificationId}": {
       "schema": {
@@ -394,6 +428,14 @@
         "$ref": "#/entities/Comment"
       },
       "description": "Stores comments for a specific post."
+    },
+    "/chats/{chatId}": {
+        "schema": { "$ref": "#/entities/Chat" },
+        "description": "Stores metadata for a private chat between users."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+        "schema": { "$ref": "#/entities/PrivateMessage" },
+        "description": "Stores the actual messages for a specific private chat."
     },
     "/stats/users": {
       "schema": {
@@ -421,5 +463,3 @@
     }
   }
 }
-
-    

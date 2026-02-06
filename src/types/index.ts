@@ -73,4 +73,21 @@ export interface Notification {
   createdAt?: Timestamp;
 }
 
-    
+export interface Chat {
+  id: string;
+  participantIds: string[];
+  lastMessage?: {
+    text: string;
+    senderId: string;
+    createdAt: Timestamp;
+  };
+}
+
+export interface PrivateMessage {
+  id: string;
+  senderId: string;
+  senderUsername: string;
+  senderAvatarUrl: string;
+  text: string;
+  createdAt?: Timestamp;
+}

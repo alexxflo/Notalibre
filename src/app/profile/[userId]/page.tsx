@@ -14,8 +14,9 @@ import PostCard from '@/components/posts/PostCard';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import PrivateChat from '@/components/PrivateChat';
 
-function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, currentUserProfile: UserProfile | null }) {
+function ProfileHeader({ profile, currentUserProfile, onSendMessageClick }: { profile: UserProfile, currentUserProfile: UserProfile | null, onSendMessageClick?: () => void }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -184,11 +185,9 @@ function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, 
                         {isFollowing ? <UserCheck className="mr-2"/> : <Users className="mr-2"/>}
                         {isFollowing ? 'Siguiendo' : 'Seguir'}
                     </Button>
-                    <Button variant="outline" asChild>
-                        <a href={`mailto:${profile.email}`}>
-                            <MessageSquare className="mr-2" />
-                            Enviar Mensaje
-                        </a>
+                    <Button variant="outline" onClick={onSendMessageClick}>
+                        <MessageSquare className="mr-2" />
+                        Enviar Mensaje
                     </Button>
                 </div>
             )}
@@ -202,6 +201,7 @@ export default function ProfilePage() {
     const userId = params.userId as string;
     const firestore = useFirestore();
     const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     // --- Start of Logout Handling Logic ---
     const previousUserRef = useRef(currentUser);
@@ -290,7 +290,7 @@ export default function ProfilePage() {
         <div className="min-h-screen flex flex-col">
             <Header coinBalance={currentUserProfile?.coinBalance ?? 0}/>
             <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center gap-8">
-                <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} />
+                <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} onSendMessageClick={() => setIsChatOpen(true)} />
                 <h2 className="text-2xl font-headline text-white self-start max-w-4xl w-full">Publicaciones con Imagen</h2>
                 <div className="w-full max-w-2xl space-y-6">
                     {arePostsLoading ? (
@@ -307,9 +307,15 @@ export default function ProfilePage() {
                     )}
                 </div>
             </main>
+            {currentUserProfile && !isOwnProfile && (
+                <PrivateChat
+                    currentUser={currentUserProfile}
+                    targetUser={profile}
+                    open={isChatOpen}
+                    onOpenChange={setIsChatOpen}
+                />
+            )}
             <Footer />
         </div>
     );
 }
-
-    
