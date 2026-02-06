@@ -44,8 +44,12 @@ service cloud.firestore {
     }
 
     match /chats/{chatId} {
-      // Solo los participantes pueden leer o actualizar los metadatos del chat (ej. lastMessage)
-      allow read, update: if request.auth != null && request.auth.uid in resource.data.participantIds;
+      // Un usuario autenticado puede leer un chat si es participante.
+      allow get: if request.auth != null && request.auth.uid in resource.data.participantIds;
+      // Un usuario autenticado puede listar los chats (la app filtra por sus propios chats).
+      allow list: if request.auth != null;
+      // Solo los participantes pueden actualizar los metadatos del chat (ej. lastMessage)
+      allow update: if request.auth != null && request.auth.uid in resource.data.participantIds;
       // Cualquiera puede crear un nuevo chat, siempre que se incluya a sí mismo.
       allow create: if request.auth != null && request.auth.uid in request.resource.data.participantIds;
 
@@ -69,5 +73,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
