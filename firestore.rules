@@ -3,10 +3,19 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     match /users/{userId} {
-      // Los perfiles de usuario son de lectura pública para permitir la visualización de perfiles de otros usuarios.
+      // Los perfiles de usuario son de lectura pública para permitir la visualización de perfiles.
       allow read: if true;
-      // Solo el propietario autenticado puede escribir en su propio perfil.
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Solo el propietario puede crear su perfil.
+      allow create: if request.auth != null && request.auth.uid == userId;
+
+      // Cualquier usuario autenticado puede actualizar un perfil.
+      // Esto es necesario para la función de "seguir" (un usuario actualiza la lista de seguidores de otro)
+      // y para que el administrador actualice saldos de monedas o bloquee usuarios.
+      allow update: if request.auth != null;
+
+      // Solo el propietario puede borrar su perfil.
+      allow delete: if request.auth != null && request.auth.uid == userId;
       
       // Las notificaciones son privadas para el usuario.
       match /notifications/{notificationId} {
