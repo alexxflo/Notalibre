@@ -5,7 +5,8 @@ service cloud.firestore {
     // PERFIL DE USUARIO Y SUS SUB-COLECCIONES
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Allow user to write to their own profile, OR allow the admin to write to any profile.
+      allow write: if request.auth != null && (request.auth.uid == userId || request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1');
       
       // MENSAJES DE SOPORTE: Solo el dueño del perfil puede leer/escribir.
       match /messages/{messageId} {
