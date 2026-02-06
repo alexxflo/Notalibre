@@ -54,6 +54,26 @@ export default function PrivateChat({
     return [currentUser.id, targetUser.id].sort().join('_');
   }, [currentUser, targetUser]);
 
+  const chatRef = useMemoFirebase(() => {
+    if (!firestore || !chatId) return null;
+    return doc(firestore, 'chats', chatId);
+  }, [firestore, chatId]);
+
+  // When the chat is opened, ensure the chat document exists.
+  // This is crucial for the security rules on the 'messages' subcollection to pass.
+  useEffect(() => {
+    if (open && chatRef && currentUser && targetUser) {
+      setDocumentNonBlocking(
+        chatRef,
+        {
+          participantIds: [currentUser.id, targetUser.id],
+        },
+        { merge: true } // Use merge to safely create or update, won't overwrite if it exists.
+      );
+    }
+  }, [open, chatRef, currentUser, targetUser]);
+
+
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !chatId) return null;
     return query(
@@ -80,21 +100,13 @@ export default function PrivateChat({
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !chatId || !newMessage.trim()) return;
+    if (!firestore || !chatId || !newMessage.trim() || !chatRef) return;
 
-    const chatRef = doc(firestore, 'chats', chatId);
+    // The chat document is created when the panel is opened, so we can just
+    // add the message and update the `lastMessage` field.
     const messagesCollection = collection(chatRef, 'messages');
 
-    // 1. Ensure the chat document exists (non-blocking)
-    setDocumentNonBlocking(
-      chatRef,
-      {
-        participantIds: [currentUser.id, targetUser.id],
-      },
-      { merge: true }
-    );
-
-    // 2. Add the new message (non-blocking)
+    // 1. Add the new message (non-blocking)
     const messageData = {
       senderId: currentUser.id,
       senderUsername: currentUser.username,
@@ -104,7 +116,7 @@ export default function PrivateChat({
     };
     addDocumentNonBlocking(messagesCollection, messageData);
 
-    // 3. Update the last message on the chat document (non-blocking)
+    // 2. Update the last message on the chat document (non-blocking)
     updateDocumentNonBlocking(chatRef, {
       lastMessage: {
         text: newMessage,
