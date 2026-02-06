@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, serverTimestamp, doc, setDoc, getDoc, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, serverTimestamp, doc, setDoc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Chat, PrivateMessage } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -93,14 +93,21 @@ function MessagesContent() {
     const chatId = [user.uid, targetUser.id].sort().join('_');
     const chatRef = doc(firestore, 'chats', chatId);
     const chatSnap = await getDoc(chatRef);
+    
+    const participantsData = {
+        [user.uid]: { username: currentUserProfile.username, avatarUrl: currentUserProfile.avatarUrl },
+        [targetUser.id]: { username: targetUser.username, avatarUrl: targetUser.avatarUrl },
+    };
 
     if (!chatSnap.exists()) {
       await setDoc(chatRef, {
         participantIds: [user.uid, targetUser.id],
-        participants: {
-          [user.uid]: { username: currentUserProfile.username, avatarUrl: currentUserProfile.avatarUrl },
-          [targetUser.id]: { username: targetUser.username, avatarUrl: targetUser.avatarUrl },
-        }
+        participants: participantsData,
+      });
+    } else if (!chatSnap.data()?.participants) {
+      // If chat exists but without the participants map, update it.
+      await updateDoc(chatRef, {
+        participants: participantsData
       });
     }
 
@@ -113,7 +120,9 @@ function MessagesContent() {
     const otherParticipantId = chat.participantIds.find(id => id !== user.uid);
     if (!otherParticipantId) return;
 
-    const otherParticipant = chat.participants[otherParticipantId];
+    const otherParticipant = chat.participants?.[otherParticipantId];
+    if (!otherParticipant) return;
+
     setSelectedChat({
       id: chat.id,
       otherParticipant: {
