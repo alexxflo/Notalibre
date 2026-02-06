@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import PostForm from '@/components/posts/PostForm';
 import PostCard from '@/components/posts/PostCard';
@@ -10,12 +10,13 @@ import type { Post, UserProfile } from '@/types';
 
 export default function MainFeed({ userProfile }: { userProfile: UserProfile }) {
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  // Remove orderBy from the query to prevent a potential index-related permission error.
+  // The query should only run if there is a user logged in.
   const postsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return query(collection(firestore, 'posts'));
-  }, [firestore]);
+  }, [firestore, user]);
 
   const { data: posts, isLoading: arePostsLoading } = useCollection<Post>(postsQuery);
 

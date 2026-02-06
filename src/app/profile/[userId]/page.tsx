@@ -265,11 +265,11 @@ export default function ProfilePage() {
     const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } = useDoc<UserProfile>(currentUserProfileRef);
 
     const postsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !currentUser) return null;
         // Fetch ALL posts to avoid a filter-based query that causes a misleading permission error
         // when the required composite index is missing. We will filter on the client.
         return query(collection(firestore, 'posts'));
-    }, [firestore]);
+    }, [firestore, currentUser]);
 
     const { data: allPosts, isLoading: arePostsLoading } = useCollection<Post>(postsQuery);
 
