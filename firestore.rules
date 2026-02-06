@@ -3,58 +3,44 @@ service cloud.firestore {
   match /databases/{database}/documents {
     
     match /users/{userId} {
-      // Los perfiles de usuario ahora son de lectura pública para que
-      // la aplicación pueda cargar datos de perfil, incluso de otros usuarios.
-      // La creación y modificación siguen siendo seguras.
+      // Perfiles de usuario son de lectura pública para que la app pueda cargar datos.
       allow read: if true;
-
-      // Un usuario solo puede crear su propio perfil.
-      allow create: if request.auth != null && request.auth.uid == userId;
-
-      // Un usuario solo puede actualizar o eliminar su propio perfil.
-      allow update, delete: if request.auth != null && request.auth.uid == userId;
+      // Solo el dueño de la cuenta puede crear, modificar o borrar su propio perfil.
+      allow write: if request.auth != null && request.auth.uid == userId;
       
-      // Las notificaciones son privadas para el usuario.
+      // Subcolecciones de notificaciones y mensajes son privadas para el usuario.
       match /notifications/{notificationId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
-
-      // Los mensajes privados son para un usuario específico.
       match /messages/{messageId} {
           allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
 
     match /posts/{postId} {
-      // Las publicaciones y sus comentarios son de lectura pública.
+      // Cualquiera puede leer publicaciones y comentarios.
       allow read: if true;
       
-      // Crear una publicación requiere autenticación y que el ID del usuario coincida.
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      
-      // Cualquiera autenticado puede actualizar (para me gusta/comentarios), pero solo el propietario puede eliminar.
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Para escribir (crear, editar, borrar) publicaciones o comentarios,
+      // el usuario debe estar autenticado.
+      // Reglas más específicas se pueden añadir aquí después.
+      allow write: if request.auth != null;
 
-      // Los comentarios de una publicación son de lectura pública.
       match /comments/{commentId} {
           allow read: if true;
-          // Cualquier usuario autenticado puede crear un comentario.
-          allow create: if request.auth != null;
+          allow write: if request.auth != null;
       }
     }
     
-    // Las campañas requieren autenticación.
+    // Cualquiera autenticado puede leer/escribir en estas colecciones por ahora.
     match /campaigns/{campaignId} {
       allow read, write: if request.auth != null;
     }
     
-    // Las verificaciones de compra requieren autenticación.
     match /purchase_verifications/{verificationId} {
       allow read, write: if request.auth != null;
     }
     
-    // Las estadísticas requieren autenticación.
     match /stats/{docId=**} {
       allow read, write: if request.auth != null;
     }
