@@ -23,21 +23,13 @@ export default function SignIn() {
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      toast({ title: 'Paso 1: Iniciando', description: 'Abriendo ventana de Google.', duration: 10000 });
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      toast({ title: 'Paso 2: Autenticación Exitosa', description: `Usuario: ${user.displayName}`, duration: 10000 });
 
-      // Check if user profile already exists
       const userDocRef = doc(firestore, 'users', user.uid);
-      
-      toast({ title: 'Paso 3: Verificando perfil...', description: 'Consultando la base de datos.', duration: 10000 });
       const docSnap = await getDoc(userDocRef);
-      toast({ title: `Paso 4: Verificación completa.`, description: `¿El perfil ya existe?: ${docSnap.exists()}`, duration: 10000 });
 
       if (!docSnap.exists()) {
-        toast({ title: 'Paso 5: Creando nuevo perfil', description: '¡Es tu primera vez, bienvenido!', duration: 10000 });
-        // Create user profile document if it doesn't exist
         const newUserProfile = {
           username: user.displayName || 'Usuario Anónimo',
           email: user.email || '',
@@ -48,16 +40,11 @@ export default function SignIn() {
           following: [],
           followers: [],
         };
-        // Use non-blocking call. Error will be handled globally.
+        
         setDocumentNonBlocking(userDocRef, newUserProfile, {});
-        toast({ title: 'Paso 6: Perfil enviado para creación', description: `Recibirás ${WELCOME_BONUS} monedas.`, duration: 10000 });
 
-        // Increment the global user counter
         const statsRef = doc(firestore, 'stats', 'users');
         setDoc(statsRef, { count: increment(1) }, { merge: true })
-          .then(() => {
-            toast({ title: 'Paso 7: Estadísticas actualizadas', duration: 10000 });
-          })
           .catch(err => {
             const permissionError = new FirestorePermissionError({
               path: statsRef.path,
@@ -66,18 +53,32 @@ export default function SignIn() {
             });
             errorEmitter.emit('permission-error', permissionError);
           });
+        
+        toast({
+          title: '¡Bienvenido a VORTEX!',
+          description: `Hemos creado tu perfil y te hemos dado ${WELCOME_BONUS} monedas de bienvenida.`,
+        });
+
       } else {
-          toast({ title: 'Paso 5: ¡Bienvenido de vuelta!', description: 'Cargando tu sesión.', duration: 10000 });
+        const userData = docSnap.data();
+        toast({
+          title: `¡Bienvenido de vuelta, ${userData?.username || 'Usuario'}!`,
+          description: 'Cargando tu sesión...',
+        });
       }
     } catch (error) {
       const authError = error as AuthError;
+
+      if (authError.code === 'auth/popup-closed-by-user') {
+        return; // Don't show an error if the user closes the popup.
+      }
       
       let title = 'Error de Autenticación';
       let description = authError.message || 'Ocurrió un error al intentar iniciar sesión.';
 
       if (authError.code === 'auth/unauthorized-domain') {
         title = 'Dominio no Autorizado';
-        description = `El dominio de esta aplicación no ha sido autorizado. Ve a tu Consola de Firebase > Authentication > Settings > Authorized domains y añade el dominio.`;
+        description = `El dominio de esta aplicación no ha sido autorizado en Firebase. Por favor, añádelo en la Consola de Firebase > Authentication > Settings > Authorized domains.`;
       } else if (authError.code === 'auth/operation-not-allowed') {
         title = 'Error de Configuración';
         description = 'El inicio de sesión con Google no está habilitado. Por favor, actívalo en la consola de Firebase.';
@@ -85,9 +86,9 @@ export default function SignIn() {
 
       toast({
         variant: 'destructive',
-        title: `ERROR: ${title}`,
-        description: `Detalle: ${description} (Código: ${authError.code})`,
-        duration: 20000,
+        title: title,
+        description: description,
+        duration: 15000,
       });
     }
   };
