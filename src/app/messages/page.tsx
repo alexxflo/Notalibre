@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, serverTimestamp, doc, setDoc, getDoc } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy, serverTimestamp, doc, setDoc, getDoc, getDocs } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Chat, PrivateMessage } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { cn } from '@/lib/utils';
 
 function MessagesContent() {
   const { user, isUserLoading } = useUser();
@@ -45,7 +46,7 @@ function MessagesContent() {
   useEffect(() => {
     if (firestore) {
       const usersCollection = collection(firestore, 'users');
-      getDoc(doc(collection(firestore, 'users'))).then(snapshot => {
+      getDocs(usersCollection).then(snapshot => {
         const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserProfile));
         setAllUsers(usersData);
       });
@@ -274,5 +275,3 @@ export default function MessagesPage() {
         </Suspense>
     )
 }
-
-    
