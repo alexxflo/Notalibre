@@ -196,7 +196,7 @@ function MessagesContent() {
                 ) : chats && chats.length > 0 ? (
                   chats.map(chat => {
                     const otherId = chat.participantIds.find(id => id !== user?.uid);
-                    if (!otherId || !chat.participants[otherId]) return null;
+                    if (!otherId || !chat.participants?.[otherId]) return null;
                     const otherUser = chat.participants[otherId];
                     return (
                     <div key={chat.id} onClick={() => handleChatSelect(chat)} className={cn("flex items-start gap-3 p-3 hover:bg-accent cursor-pointer border-l-4", selectedChat?.id === chat.id ? "border-primary bg-accent" : "border-transparent")}>
