@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, serverTimestamp, doc, setDoc, getDoc, getDocs } from 'firebase/firestore';
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Chat, PrivateMessage } from '@/types';
@@ -29,13 +29,27 @@ function MessagesContent() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const currentUserProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-  const { data: currentUserProfile } = useDoc<UserProfile>(currentUserProfileRef);
+  const { data: currentUserProfile } = useCollection<UserProfile>(currentUserProfileRef);
 
+  // Query to get all chats the user is a part of, without ordering.
+  // This avoids the need for a composite index in Firestore.
   const chatsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(firestore, 'chats'), where('participantIds', 'array-contains', user.uid), orderBy('lastMessage.createdAt', 'desc'));
+    return query(collection(firestore, 'chats'), where('participantIds', 'array-contains', user.uid));
   }, [firestore, user]);
-  const { data: chats, isLoading: areChatsLoading } = useCollection<Chat>(chatsQuery);
+
+  const { data: rawChats, isLoading: areChatsLoading } = useCollection<Chat>(chatsQuery);
+
+  // Sort the chats on the client-side by the last message timestamp.
+  const chats = useMemo(() => {
+    if (!rawChats) return [];
+    return rawChats.sort((a, b) => {
+      const aTime = a.lastMessage?.createdAt?.toMillis() || 0;
+      const bTime = b.lastMessage?.createdAt?.toMillis() || 0;
+      return bTime - aTime;
+    });
+  }, [rawChats]);
+
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !selectedChat) return null;
