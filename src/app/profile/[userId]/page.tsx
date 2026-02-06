@@ -258,7 +258,7 @@ export default function ProfilePage() {
     // --- End of Logout Handling Logic ---
 
 
-    const profileRef = useMemoFirebase(() => userId ? doc(firestore, 'users', userId) : null, [firestore, userId]);
+    const profileRef = useMemoFirebase(() => (currentUser && userId) ? doc(firestore, 'users', userId) : null, [firestore, currentUser, userId]);
     const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(profileRef);
 
     const currentUserProfileRef = useMemoFirebase(() => currentUser ? doc(firestore, 'users', currentUser.uid) : null, [firestore, currentUser]);
@@ -351,5 +351,3 @@ export default function ProfilePage() {
         </div>
     );
 }
-
-    
