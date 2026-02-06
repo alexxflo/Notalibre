@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { GoogleIcon } from '../icons';
 import { useToast } from '@/hooks/use-toast';
 import VortexLogo from '../VortexLogo';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const WELCOME_BONUS = 250;
 
@@ -41,18 +40,12 @@ export default function SignIn() {
           followers: [],
         };
         
-        setDocumentNonBlocking(userDocRef, newUserProfile, {});
+        // Using await for a synchronous, predictable flow.
+        await setDoc(userDocRef, newUserProfile);
 
         const statsRef = doc(firestore, 'stats', 'users');
-        setDoc(statsRef, { count: increment(1) }, { merge: true })
-          .catch(err => {
-            const permissionError = new FirestorePermissionError({
-              path: statsRef.path,
-              operation: 'update',
-              requestResourceData: { count: 'increment(1)' },
-            });
-            errorEmitter.emit('permission-error', permissionError);
-          });
+        // Also awaiting this to ensure it completes or fails within the try block.
+        await setDoc(statsRef, { count: increment(1) }, { merge: true });
         
         toast({
           title: '¡Bienvenido a VORTEX!',
@@ -66,22 +59,34 @@ export default function SignIn() {
           description: 'Cargando tu sesión...',
         });
       }
-    } catch (error) {
-      const authError = error as AuthError;
+    } catch (error: any) {
+      console.error("Sign-in failed:", error); // Log the full error for my debugging.
 
-      if (authError.code === 'auth/popup-closed-by-user') {
-        return; // Don't show an error if the user closes the popup.
-      }
-      
-      let title = 'Error de Autenticación';
-      let description = authError.message || 'Ocurrió un error al intentar iniciar sesión.';
+      let title = 'Error Inesperado';
+      let description = error.message || 'Ocurrió un error al intentar iniciar sesión.';
 
-      if (authError.code === 'auth/unauthorized-domain') {
-        title = 'Dominio no Autorizado';
-        description = `El dominio de esta aplicación no ha sido autorizado en Firebase. Por favor, añádelo en la Consola de Firebase > Authentication > Settings > Authorized domains.`;
-      } else if (authError.code === 'auth/operation-not-allowed') {
-        title = 'Error de Configuración';
-        description = 'El inicio de sesión con Google no está habilitado. Por favor, actívalo en la consola de Firebase.';
+      // Check for a specific error code to provide better user feedback.
+      if (error.code) {
+        switch(error.code) {
+          case 'auth/popup-closed-by-user':
+            // Don't show an error toast if the user intentionally closes the popup.
+            return;
+          case 'auth/unauthorized-domain':
+            title = 'Dominio no Autorizado';
+            description = `El dominio de esta aplicación no ha sido autorizado en Firebase. Por favor, añádelo en la Consola de Firebase > Authentication > Settings > Authorized domains.`;
+            break;
+          case 'auth/operation-not-allowed':
+            title = 'Error de Configuración';
+            description = 'El inicio de sesión con Google no está habilitado. Por favor, actívalo en la consola de Firebase.';
+            break;
+          case 'permission-denied': // This will catch Firestore security rule errors
+            title = 'Error de Permisos';
+            description = 'No se pudo crear tu perfil de usuario. Revisa las reglas de seguridad de Firestore. (Error: permission-denied)';
+            break;
+          default:
+            // For any other coded error, display the code.
+            description = `${error.message} (código: ${error.code})`;
+        }
       }
 
       toast({
