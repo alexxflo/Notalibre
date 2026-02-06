@@ -16,6 +16,8 @@ import Link from 'next/link';
 type CommentSectionProps = {
     postId: string;
     currentUserProfile: UserProfile | null;
+    postOwnerId: string;
+    postText: string;
 };
 
 function SingleComment({ comment }: { comment: Comment }) {
@@ -42,7 +44,7 @@ function SingleComment({ comment }: { comment: Comment }) {
     );
 }
 
-export default function CommentSection({ postId, currentUserProfile }: CommentSectionProps) {
+export default function CommentSection({ postId, currentUserProfile, postOwnerId, postText }: CommentSectionProps) {
     const firestore = useFirestore();
     const [newComment, setNewComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,6 +78,22 @@ export default function CommentSection({ postId, currentUserProfile }: CommentSe
             updateDocumentNonBlocking(postDocRef, {
                 commentCount: increment(1)
             });
+
+            // Add notification logic, but don't notify for own post
+            if (postOwnerId !== currentUserProfile.id) {
+                const notificationCollection = collection(firestore, 'users', postOwnerId, 'notifications');
+                addDocumentNonBlocking(notificationCollection, {
+                    userId: postOwnerId,
+                    actorId: currentUserProfile.id,
+                    actorUsername: currentUserProfile.username,
+                    actorAvatarUrl: currentUserProfile.avatarUrl,
+                    type: 'new_comment',
+                    postId: postId,
+                    postTextSnippet: postText?.substring(0, 50) || '',
+                    read: false,
+                    createdAt: serverTimestamp()
+                });
+            }
 
             setNewComment('');
         } catch (error) {
@@ -114,3 +132,5 @@ export default function CommentSection({ postId, currentUserProfile }: CommentSe
         </div>
     );
 }
+
+    

@@ -46,7 +46,6 @@ export interface Comment {
   createdAt?: Timestamp;
 }
 
-
 export interface DailyStats {
     count: number;
     date: string; // YYYY-MM-DD
@@ -60,3 +59,18 @@ export interface ChatMessage {
   text: string;
   createdAt?: Timestamp;
 }
+
+export interface Notification {
+  id: string;
+  userId: string; // The user to be notified
+  actorId: string; // The user who performed the action
+  actorUsername: string;
+  actorAvatarUrl: string;
+  type: 'new_follower' | 'new_like' | 'new_comment' | 'avatar_change';
+  postId?: string; // for likes and comments
+  postTextSnippet?: string; // for likes and comments
+  read: boolean;
+  createdAt?: Timestamp;
+}
+
+    

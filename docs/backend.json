@@ -298,6 +298,65 @@
         "text",
         "createdAt"
       ]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Represents a notification for a user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who receives the notification."
+        },
+        "actorId": {
+          "type": "string",
+          "description": "The UID of the user who performed the action."
+        },
+        "actorUsername": {
+          "type": "string",
+          "description": "The username of the user who performed the action."
+        },
+        "actorAvatarUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "The avatar of the user who performed the action."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "new_follower",
+            "new_like",
+            "new_comment",
+            "avatar_change"
+          ],
+          "description": "The type of notification."
+        },
+        "postId": {
+          "type": "string",
+          "description": "The ID of the relevant post (for likes and comments)."
+        },
+        "postTextSnippet": {
+          "type": "string",
+          "description": "A snippet of the post text."
+        },
+        "read": {
+          "type": "boolean",
+          "description": "Whether the notification has been read."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of the notification."
+        }
+      },
+      "required": [
+        "userId",
+        "actorId",
+        "actorUsername",
+        "actorAvatarUrl",
+        "type",
+        "read",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -317,6 +376,12 @@
         "$ref": "#/entities/ChatMessage"
       },
       "description": "Stores private chat messages for a specific user."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": {
+        "$ref": "#/entities/Notification"
+      },
+      "description": "Stores notifications for a specific user. Notifications are created by server-side logic (or client-side for simplicity here) in response to actions like follows, likes, etc."
     },
     "/posts/{postId}": {
       "schema": {
@@ -356,3 +421,5 @@
     }
   }
 }
+
+    

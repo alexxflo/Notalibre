@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, arrayUnion, arrayRemove, collection, serverTimestamp } from 'firebase/firestore';
+import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -39,10 +39,11 @@ export default function PostCard({ post, currentUserProfile }: PostCardProps) {
     const isOwner = currentUserProfile?.id === post.userId;
 
     const handleLikeToggle = () => {
-        if (!user) {
+        if (!user || !currentUserProfile) {
             toast({ variant: 'destructive', description: 'Necesitas iniciar sesión para dar me gusta.' });
             return;
         }
+
         if (isLiked) {
             updateDocumentNonBlocking(postRef, {
                 likes: arrayRemove(user.uid)
@@ -51,6 +52,22 @@ export default function PostCard({ post, currentUserProfile }: PostCardProps) {
             updateDocumentNonBlocking(postRef, {
                 likes: arrayUnion(user.uid)
             });
+
+            // Add notification logic, but don't notify for own post
+            if (post.userId !== user.uid) {
+                const notificationCollection = collection(firestore, 'users', post.userId, 'notifications');
+                addDocumentNonBlocking(notificationCollection, {
+                    userId: post.userId,
+                    actorId: user.uid,
+                    actorUsername: currentUserProfile.username,
+                    actorAvatarUrl: currentUserProfile.avatarUrl,
+                    type: 'new_like',
+                    postId: post.id,
+                    postTextSnippet: post.text?.substring(0, 50) || '',
+                    read: false,
+                    createdAt: serverTimestamp()
+                });
+            }
         }
     };
     
@@ -130,7 +147,9 @@ export default function PostCard({ post, currentUserProfile }: PostCardProps) {
                     {post.commentCount}
                 </Button>
             </CardFooter>
-            {showComments && <CommentSection postId={post.id} currentUserProfile={currentUserProfile} />}
+            {showComments && <CommentSection postId={post.id} currentUserProfile={currentUserProfile} postOwnerId={post.userId} postText={post.text}/>}
         </Card>
     );
 }
+
+    

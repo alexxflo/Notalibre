@@ -1,26 +1,99 @@
 'use client';
 
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, collection, query, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
+import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Post } from '@/types';
-import { Loader2, Users, UserCheck, MessageSquare } from 'lucide-react';
+import { Loader2, Users, UserCheck, MessageSquare, Camera } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PostCard from '@/components/posts/PostCard';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, currentUserProfile: UserProfile | null }) {
     const firestore = useFirestore();
     const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isUploading, setIsUploading] = useState(false);
     
-    // Default to false if there's no current user profile
-    const isFollowing = currentUserProfile?.following?.includes(profile.id) ?? false;
     const isOwnProfile = currentUserProfile?.id === profile.id;
+    const isFollowing = currentUserProfile?.following?.includes(profile.id) ?? false;
+    
+    const MAX_DATA_URL_BYTES = 1024 * 1024; // 1 MiB (Firestore limit)
+
+    const handleAvatarClick = () => {
+        if (isOwnProfile && !isUploading) {
+            fileInputRef.current?.click();
+        }
+    };
+    
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast({ variant: 'destructive', title: 'Archivo no válido', description: 'Por favor, selecciona una imagen.' });
+            return;
+        }
+        
+        setIsUploading(true);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.createElement('img');
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 512; // Resize to a reasonable width for avatars
+                const scaleSize = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+                canvas.width = img.width * scaleSize;
+                canvas.height = img.height * scaleSize;
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                     setIsUploading(false);
+                     return;
+                }
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.9); // Compress as JPEG
+
+                if (compressedDataUrl.length > MAX_DATA_URL_BYTES) {
+                    toast({ variant: 'destructive', title: 'Imagen demasiado grande', description: 'Incluso comprimida, la imagen es demasiado grande. Por favor, elige una con menor resolución.' });
+                    setIsUploading(false);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                    return;
+                }
+                
+                const userDocRef = doc(firestore, 'users', profile.id);
+                updateDocumentNonBlocking(userDocRef, { avatarUrl: compressedDataUrl });
+
+                if (profile.followers && profile.followers.length > 0) {
+                    for (const followerId of profile.followers) {
+                        const notificationCollection = collection(firestore, 'users', followerId, 'notifications');
+                        addDocumentNonBlocking(notificationCollection, {
+                            userId: followerId,
+                            actorId: profile.id,
+                            actorUsername: profile.username,
+                            actorAvatarUrl: compressedDataUrl,
+                            type: 'avatar_change',
+                            read: false,
+                            createdAt: serverTimestamp(),
+                        });
+                    }
+                }
+
+                toast({ description: "Foto de perfil actualizada." });
+                setIsUploading(false);
+            };
+            img.src = e.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+    };
 
     const handleFollowToggle = () => {
         if (!currentUserProfile) {
@@ -28,7 +101,6 @@ function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, 
             return;
         }
 
-        // Prevent following yourself
         if (isOwnProfile) {
             toast({ variant: 'destructive', description: 'No puedes seguirte a ti mismo.'});
             return;
@@ -47,17 +119,50 @@ function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, 
             updateDocumentNonBlocking(currentUserDocRef, { following: arrayUnion(profile.id) });
             updateDocumentNonBlocking(targetUserDocRef, { followers: arrayUnion(currentUserProfile.id) });
             toast({ description: `Ahora sigues a ${profile.username}.`});
+
+            // Send notification
+            const notificationCollection = collection(firestore, 'users', profile.id, 'notifications');
+            addDocumentNonBlocking(notificationCollection, {
+                userId: profile.id,
+                actorId: currentUserProfile.id,
+                actorUsername: currentUserProfile.username,
+                actorAvatarUrl: currentUserProfile.avatarUrl,
+                type: 'new_follower',
+                read: false,
+                createdAt: serverTimestamp()
+            });
         }
     };
 
     return (
         <div className="w-full max-w-4xl bg-card border border-border rounded-lg p-6 flex flex-col md:flex-row items-center gap-6">
-            <Image
-                src={profile.avatarUrl}
-                alt={profile.username}
-                width={128}
-                height={128}
-                className="rounded-full border-4 border-primary"
+            <div className="relative group">
+                <Image
+                    src={profile.avatarUrl}
+                    alt={profile.username}
+                    width={128}
+                    height={128}
+                    className={cn(
+                        "rounded-full border-4 border-primary object-cover w-32 h-32",
+                        isOwnProfile && "cursor-pointer group-hover:opacity-70 transition-opacity"
+                    )}
+                    onClick={handleAvatarClick}
+                />
+                 {isOwnProfile && (
+                     <div 
+                        onClick={handleAvatarClick} 
+                        className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                        {isUploading ? <Loader2 className="animate-spin text-white h-8 w-8" /> : <Camera className="text-white h-8 w-8" />}
+                    </div>
+                )}
+            </div>
+             <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/png, image/jpeg, image/gif, image/webp"
             />
             <div className="flex-grow text-center md:text-left">
                 <h1 className="text-3xl font-bold text-white font-headline">{profile.username}</h1>
@@ -206,3 +311,5 @@ export default function ProfilePage() {
         </div>
     );
 }
+
+    
