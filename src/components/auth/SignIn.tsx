@@ -6,7 +6,7 @@ import {
   signInWithPopup,
   type AuthError,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { GoogleIcon } from '../icons';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +22,6 @@ export default function SignIn() {
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      // This check is important as useAuth() and useFirestore() can return null initially
       if (!auth || !firestore) {
         toast({
           variant: "destructive",
@@ -35,11 +34,9 @@ export default function SignIn() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // After successful authentication, check for user profile
       const userDocRef = doc(firestore, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
 
-      // If the user profile doesn't exist, create it
       if (!docSnap.exists()) {
         const newUserProfile = {
           username: user.displayName || 'Usuario Anónimo',
@@ -52,12 +49,7 @@ export default function SignIn() {
           followers: [],
         };
         
-        // Await the profile creation to ensure it completes before proceeding
-        // or fails within this try...catch block.
         await setDoc(userDocRef, newUserProfile);
-        
-        // NOTE: The logic to update the global user count has been removed from this critical path
-        // to minimize potential points of failure during the initial sign-in.
         
         toast({
           title: '¡Bienvenido a VORTEX!',
@@ -65,7 +57,6 @@ export default function SignIn() {
         });
 
       } else {
-        // If the profile already exists, just welcome them back
         const userData = docSnap.data();
         toast({
           title: `¡Bienvenido de vuelta, ${userData?.username || 'Usuario'}!`,
@@ -73,43 +64,40 @@ export default function SignIn() {
         });
       }
     } catch (error: any) {
-      // Log the full error for debugging in the development console
       console.error("Sign-in failed:", error);
 
-      // Default error messages
       let title = 'Error Inesperado';
       let description = error.message || 'Ocurrió un error al intentar iniciar sesión.';
 
-      // Provide more specific feedback based on the error code
       if (error.code) {
         switch(error.code) {
           case 'auth/popup-closed-by-user':
-            // This is a user action, not an error. Don't show a toast.
+            // This is a user action, not a critical error. Do not show a toast.
             return;
           case 'auth/unauthorized-domain':
             title = 'Dominio no Autorizado';
-            description = `El dominio de esta aplicación no ha sido autorizado en Firebase. Por favor, añádelo en la Consola de Firebase > Authentication > Settings > Authorized domains.`;
+            // Provide the exact hostname to the user to avoid confusion.
+            description = `El dominio desde el que intentas acceder no está autorizado. Para solucionarlo, copia EXACTAMENTE el siguiente dominio: "${window.location.hostname}" y añádelo a la lista de "Dominios autorizados" en la configuración de Authentication de tu Consola de Firebase.`;
             break;
           case 'auth/operation-not-allowed':
             title = 'Error de Configuración';
             description = 'El inicio de sesión con Google no está habilitado. Por favor, actívalo en la consola de Firebase.';
             break;
-          case 'permission-denied': // This will catch Firestore security rule errors during setDoc/getDoc
-            title = 'Error de Permisos';
-            description = 'No se pudo leer o escribir tu perfil de usuario. Por favor, revisa las reglas de seguridad de Firestore. (Error: permission-denied)';
+          case 'permission-denied':
+            title = 'Error de Permisos de Base de Datos';
+            description = 'No se pudo leer o escribir tu perfil de usuario al iniciar sesión. Por favor, revisa las reglas de seguridad de Firestore. (Error: permission-denied)';
             break;
           default:
-            // For any other Firebase-specific error, show the code
+            // For any other Firebase-specific error, show the code for better debugging.
             description = `${error.message} (código: ${error.code})`;
         }
       }
 
-      // Display the final error toast
       toast({
         variant: 'destructive',
         title: title,
         description: description,
-        duration: 15000,
+        duration: 20000, // Increase duration to allow user to read and copy the domain
       });
     }
   };
