@@ -20,9 +20,9 @@ import {
   orderBy,
   serverTimestamp,
   doc,
+  setDoc,
 } from 'firebase/firestore';
 import {
-  setDocumentNonBlocking,
   addDocumentNonBlocking,
   updateDocumentNonBlocking,
 } from '@/firebase/non-blocking-updates';
@@ -47,6 +47,7 @@ export default function PrivateChat({
 }: PrivateChatProps) {
   const firestore = useFirestore();
   const [newMessage, setNewMessage] = useState('');
+  const [isChatReady, setIsChatReady] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const chatId = useMemo(() => {
@@ -59,28 +60,36 @@ export default function PrivateChat({
     return doc(firestore, 'chats', chatId);
   }, [firestore, chatId]);
 
-  // When the chat is opened, ensure the chat document exists.
-  // This is crucial for the security rules on the 'messages' subcollection to pass.
+  // When the chat is opened, ensure the chat document exists before trying to fetch messages.
   useEffect(() => {
-    if (open && chatRef && currentUser && targetUser) {
-      setDocumentNonBlocking(
-        chatRef,
-        {
-          participantIds: [currentUser.id, targetUser.id],
-        },
-        { merge: true } // Use merge to safely create or update, won't overwrite if it exists.
-      );
+    if (!open) {
+      setIsChatReady(false);
+      return;
     }
+
+    const ensureChatDocument = async () => {
+        if (chatRef && currentUser && targetUser) {
+            await setDoc(
+                chatRef,
+                { participantIds: [currentUser.id, targetUser.id] },
+                { merge: true }
+            );
+            setIsChatReady(true);
+        }
+    };
+    
+    ensureChatDocument();
+
   }, [open, chatRef, currentUser, targetUser]);
 
 
   const messagesQuery = useMemoFirebase(() => {
-    if (!firestore || !chatId) return null;
+    if (!firestore || !chatId || !isChatReady) return null;
     return query(
       collection(firestore, 'chats', chatId, 'messages'),
       orderBy('createdAt', 'asc')
     );
-  }, [firestore, chatId]);
+  }, [firestore, chatId, isChatReady]);
 
   const { data: messages, isLoading } = useCollection<PrivateMessage>(messagesQuery);
 
@@ -144,7 +153,7 @@ export default function PrivateChat({
           </SheetDescription>
         </SheetHeader>
         <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
-          {isLoading && (
+          {isLoading && !isChatReady && (
             <div className="flex justify-center items-center h-full">
               <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
             </div>
