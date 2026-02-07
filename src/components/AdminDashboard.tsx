@@ -16,7 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Ban, ShieldAlert, Users } from 'lucide-react';
+import { Loader2, Ban, ShieldAlert, Users, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -115,7 +115,21 @@ export default function AdminDashboard() {
                 ) : (
                     <div className="text-2xl font-bold text-white">{dailyActiveUsers.toLocaleString()}</div>
                 )}
-                <p className="text-xs text-slate-400">Usuarios únicos que han entrado hoy</p>
+                <p className="text-xs text-slate-400">Usuarios únicos que han entrado hoy. (No es en tiempo real)</p>
+            </CardContent>
+        </Card>
+        <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-slate-300">Usuarios Registrados</CardTitle>
+                <UserPlus className="h-4 w-4 text-slate-400" />
+            </CardHeader>
+            <CardContent>
+                {areUsersLoading ? (
+                    <Skeleton className="h-8 w-1/4 bg-slate-700" />
+                ) : (
+                    <div className="text-2xl font-bold text-white">{(users?.length ?? 0).toLocaleString()}</div>
+                )}
+                <p className="text-xs text-slate-400">Total de cuentas creadas en la plataforma.</p>
             </CardContent>
         </Card>
       </div>
