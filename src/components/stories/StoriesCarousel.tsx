@@ -75,7 +75,7 @@ export default function StoriesCarousel({ currentUserProfile }: { currentUserPro
                                     </div>
                                 </Avatar>
                             </div>
-                            <p className="text-xs text-center text-muted-foreground truncate w-full">Tu historia</p>
+                            <p className="text-xs text-center text-muted-foreground truncate w-full">Crear historia</p>
                         </div>
                     </Link>
 
