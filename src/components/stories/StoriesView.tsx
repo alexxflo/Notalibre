@@ -72,7 +72,7 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
         });
       }
       
-      if (currentUserProfile && !currentStory.views.includes(currentUserProfile.id)) {
+      if (currentUserProfile && !(currentStory.views || []).includes(currentUserProfile.id)) {
         const storyRef = doc(firestore, 'stories', currentStory.id);
         updateDoc(storyRef, { views: arrayUnion(currentUserProfile.id) });
       }
@@ -94,6 +94,7 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
 
     setProgress(0);
     video.src = currentStory.videoUrl;
+    video.muted = true; // Mute for autoplay
     
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('timeupdate', handleTimeUpdate);
@@ -108,7 +109,7 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
       video.pause();
       video.removeAttribute('src');
     };
-  }, [currentStory]); // Re-runs ONLY when the story changes
+  }, [currentStory, currentUserProfile, firestore, isPaused, api, currentStoryIndex, currentUserStories.length, selectedUserIndex, groupedStories.length]);
 
   // Effect for handling manual pause/play by the user
   useEffect(() => {
@@ -139,7 +140,7 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
   
   const handleLike = () => {
     const storyRef = doc(firestore, 'stories', currentStory.id);
-    if (currentStory.likes.includes(currentUserProfile.id)) {
+    if ((currentStory.likes || []).includes(currentUserProfile.id)) {
         updateDoc(storyRef, { likes: arrayRemove(currentUserProfile.id) });
     } else {
         updateDoc(storyRef, { likes: arrayUnion(currentUserProfile.id) });
@@ -162,7 +163,7 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
       }
   }
   
-  const isLiked = currentStory.likes.includes(currentUserProfile.id);
+  const isLiked = (currentStory.likes || []).includes(currentUserProfile.id);
   const isOwner = currentUserProfile.id === currentStory.userId;
 
   return (
@@ -239,19 +240,19 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
                 <Button variant="ghost" size="icon" className="text-white rounded-full">
                     <Eye />
                 </Button>
-                <span className="text-white font-bold">{currentStory.views.length}</span>
+                <span className="text-white font-bold">{currentStory.views?.length ?? 0}</span>
            </div>
            <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon" onClick={handleLike} className={cn("text-white rounded-full", isLiked && "text-red-500 bg-white/20")}>
                     <Heart />
                 </Button>
-                <span className="text-white font-bold">{currentStory.likes.length}</span>
+                <span className="text-white font-bold">{currentStory.likes?.length ?? 0}</span>
            </div>
            <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon" className="text-white rounded-full">
                     <MessageSquare />
                 </Button>
-                 <span className="text-white font-bold">{currentStory.comments.length}</span>
+                 <span className="text-white font-bold">{currentStory.comments?.length ?? 0}</span>
            </div>
         </div>
 
