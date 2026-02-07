@@ -52,45 +52,73 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
   }, [api]);
 
   useEffect(() => {
-    if (!currentStory || isPaused) return;
-
+    if (!currentStory || !videoRef.current) {
+        return;
+    }
     const videoElement = videoRef.current;
-    if (!videoElement) return;
+
+    // When the story changes, reset progress and current time
+    setProgress(0);
+    videoElement.currentTime = 0;
+
+    // If paused, just ensure the video is paused.
+    if (isPaused) {
+        videoElement.pause();
+        return;
+    }
 
     const handleTimeUpdate = () => {
-      if (videoElement.duration) {
-        setProgress((videoElement.currentTime / videoElement.duration) * 100);
-      }
-    };
-    
-    const handleVideoEnd = () => {
-      if (currentStoryIndex < currentUserStories.length - 1) {
-        setCurrentStoryIndex(prev => prev + 1);
-      } else {
-        // Go to next user if available
-        if (selectedUserIndex < groupedStories.length - 1) {
-          api?.scrollNext();
+        if (!isNaN(videoElement.duration) && videoElement.duration > 0) {
+            setProgress((videoElement.currentTime / videoElement.duration) * 100);
         }
-      }
     };
 
+    const handleVideoEnd = () => {
+        if (currentStoryIndex < currentUserStories.length - 1) {
+            setCurrentStoryIndex(prev => prev + 1);
+        } else {
+            if (selectedUserIndex < groupedStories.length - 1) {
+                api?.scrollNext();
+            }
+        }
+    };
+
+    const handleCanPlay = () => {
+        const playPromise = videoElement.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.error("Autoplay was prevented:", error);
+                setIsPaused(true); // If autoplay fails, show the play button
+            });
+        }
+    };
+
+    // Add event listeners
     videoElement.addEventListener('timeupdate', handleTimeUpdate);
     videoElement.addEventListener('ended', handleVideoEnd);
-    videoElement.play().catch(e => console.error("Video play failed:", e));
+    videoElement.addEventListener('canplay', handleCanPlay);
 
+    // Important: When the src of a video element changes, you need to call `load()`
+    // to make the browser fetch the new media. The `key` prop on the video element
+    // should also handle this by creating a new element, but being explicit is safer.
+    videoElement.load();
+    
+    // Some browsers might not fire 'canplay' if the video is already cached.
+    // Try to play directly, and handle the promise rejection.
+    handleCanPlay();
+
+    // Cleanup function
     return () => {
-      videoElement.removeEventListener('timeupdate', handleTimeUpdate);
-      videoElement.removeEventListener('ended', handleVideoEnd);
+        videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+        videoElement.removeEventListener('ended', handleVideoEnd);
+        videoElement.removeEventListener('canplay', handleCanPlay);
+        // It's good practice to pause the video on cleanup
+        if (!videoElement.paused) {
+            videoElement.pause();
+        }
     };
-  }, [currentStoryIndex, selectedUserIndex, currentUserStories, api, isPaused, currentStory]);
+}, [currentStory, isPaused, api, currentStoryIndex, selectedUserIndex, currentUserStories]);
 
-  useEffect(() => {
-    // Reset progress when story changes
-    setProgress(0);
-    if(videoRef.current) {
-        videoRef.current.currentTime = 0;
-    }
-  }, [currentStoryIndex, selectedUserIndex]);
 
   if (!currentStory) {
     return (
@@ -179,7 +207,7 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
         </div>
 
         {isPaused && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-none">
                 <Play className="h-24 w-24 text-white/80" />
             </div>
         )}
