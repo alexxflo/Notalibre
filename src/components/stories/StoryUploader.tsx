@@ -17,8 +17,8 @@ type StoryUploaderProps = {
     userProfile: UserProfile;
 };
 
-const MAX_VIDEO_DURATION = 60; // seconds
-const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB for videos
+const MAX_VIDEO_DURATION = 15; // seconds
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB for videos
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB for images
 
 
