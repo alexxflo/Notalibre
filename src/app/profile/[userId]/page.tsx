@@ -8,8 +8,7 @@ import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@
 import { doc, collection, query, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Post } from '@/types';
-import { Loader2, Users, UserCheck, MessageSquare, Camera, Pencil, Check, X, Gem, Grid, Video, Tag } from 'lucide-react';
-import PostCard from '@/components/posts/PostCard';
+import { Loader2, Users, UserCheck, MessageSquare, Camera, Pencil, Check, X, Gem, Grid, Video, Tag, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -217,10 +216,6 @@ function ProfileHeader({ profile, currentUserProfile, postCount }: { profile: Us
                              {isOwnProfile ? (
                                 <>
                                     <Button variant="outline">Editar Perfil</Button>
-                                    <div className="flex items-center gap-2 bg-card px-3 py-1 rounded-full border border-primary/50">
-                                        <Gem className="text-primary h-4 w-4" />
-                                        <span className="font-bold text-md text-primary font-mono">{profile.coinBalance}</span>
-                                    </div>
                                 </>
                             ) : currentUserProfile && (
                                 <>
@@ -236,6 +231,10 @@ function ProfileHeader({ profile, currentUserProfile, postCount }: { profile: Us
                                     </Link>
                                 </>
                             )}
+                             <div className="flex items-center gap-2 bg-card px-3 py-1 rounded-full border border-primary/50">
+                                <Gem className="text-primary h-4 w-4" />
+                                <span className="font-bold text-md text-primary font-mono">{profile.coinBalance}</span>
+                            </div>
                         </div>
                     </div>
                     
