@@ -210,11 +210,11 @@ export default function Sidebar() {
                     
                     <DropdownMenu onOpenChange={handleOpenChange}>
                         <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
+                            <div
                                 className={cn(
+                                    buttonVariants({ variant: 'ghost' }),
                                     "w-full justify-start text-lg h-auto py-3 px-4 relative",
-                                    "text-muted-foreground hover:bg-accent/50 hover:text-white"
+                                    "text-muted-foreground hover:bg-accent/50 hover:text-white cursor-pointer"
                                 )}
                             >
                                 <Bell className="mr-4 h-7 w-7" />
@@ -225,7 +225,7 @@ export default function Sidebar() {
                                         <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                                     </span>
                                 )}
-                            </Button>
+                            </div>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-80 md:w-96 bg-slate-900 border-slate-700 text-white" align="end">
                             <DropdownMenuLabel className="font-headline">Notificaciones</DropdownMenuLabel>
@@ -239,7 +239,7 @@ export default function Sidebar() {
                     </DropdownMenu>
 
                     <CreatePostButton userProfile={user as unknown as UserProfile} />
-                    <NavLink href="/panel" icon={LayoutGrid}>Panel</NavLink>
+                    <NavLink href="/panel" icon={LayoutGrid}>Crecimiento</NavLink>
                     <NavLink href={`/profile/${userId}`} icon={User}>Perfil</NavLink>
                 </nav>
                  <div className="mt-auto">

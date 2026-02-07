@@ -85,7 +85,7 @@ export default function PanelPage() {
     }
     
     if (!user || !userProfile) {
-        // This case should ideally be handled by the layout or a higher-order component
+        // This case should ideally be handled by a higher-order component
         // redirecting to login.
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -99,9 +99,9 @@ export default function PanelPage() {
             {showCampaignGate && (
                 <CampaignGateModal onConfirm={handleGateConfirm} onCancel={handleGateCancel} />
             )}
-            <h1 className="text-3xl font-headline text-white mb-8">Panel de Control</h1>
+            <h1 className="text-3xl font-headline text-white mb-8">Crecimiento de Cuentas</h1>
             <Tabs defaultValue="earn" value={activeTab} onValueChange={handleTabChange} className="w-full">
-                <TabsList className={cn("grid w-full max-w-2xl", user.uid === ADMIN_UID ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3")}>
+                <TabsList className={cn("grid w-full max-w-2xl", user.uid === ADMIN_UID ? "grid-cols-4" : "grid-cols-3")}>
                     <TabsTrigger value="earn"><Rocket className="mr-2 h-4 w-4"/>Ganar Monedas</TabsTrigger>
                     <TabsTrigger value="shop"><Gem className="mr-2 h-4 w-4"/>Comprar Monedas</TabsTrigger>
                     <TabsTrigger value="campaign"><Megaphone className="mr-2 h-4 w-4"/>Crear Campaña</TabsTrigger>
