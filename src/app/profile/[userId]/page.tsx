@@ -9,8 +9,6 @@ import { doc, collection, query, arrayUnion, arrayRemove, serverTimestamp } from
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Post } from '@/types';
 import { Loader2, Users, UserCheck, MessageSquare, Camera, Pencil, Check, X } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import PostCard from '@/components/posts/PostCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -328,7 +326,6 @@ export default function ProfilePage() {
 
     return (
         <div className="min-h-screen flex flex-col">
-            <Header coinBalance={currentUserProfile?.coinBalance ?? 0}/>
             <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center gap-8">
                 <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} />
                 <h2 className="text-2xl font-headline text-white self-start max-w-4xl w-full">Publicaciones con Imagen</h2>
@@ -347,7 +344,6 @@ export default function ProfilePage() {
                     )}
                 </div>
             </main>
-            <Footer />
         </div>
     );
 }

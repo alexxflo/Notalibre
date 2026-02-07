@@ -1,19 +1,20 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, Timestamp } from 'firebase/firestore';
 import type { UserProfile, Story } from '@/types';
-import { Loader2, PlusCircle } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import { Loader2, PlusCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StoriesView from '@/components/stories/StoriesView';
+import { useSearchParams } from 'next/navigation';
 
-export default function StoriesPage() {
+function StoriesPageContent() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
+    const searchParams = useSearchParams();
+    const initialUser = searchParams.get('user');
 
     const currentUserProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: currentUserProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(currentUserProfileRef);
@@ -26,7 +27,7 @@ export default function StoriesPage() {
 
     const { data: stories, isLoading: areStoriesLoading } = useCollection<Story>(storiesQuery);
 
-    // Group stories by user
+    // Group stories by user and sort them
     const storiesByUser = useMemo(() => {
         if (!stories) return [];
         const grouped: { [userId: string]: Story[] } = {};
@@ -35,17 +36,28 @@ export default function StoriesPage() {
                 grouped[story.userId] = [];
             }
             grouped[story.userId].push(story);
-            // Sort stories within each user group by creation date
-            grouped[story.userId].sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
         });
+
+        // Sort stories within each user group by creation date
+        Object.values(grouped).forEach(userStories => {
+            userStories.sort((a, b) => (a.createdAt?.toMillis() ?? 0) - (b.createdAt?.toMillis() ?? 0));
+        });
+
         return Object.values(grouped);
     }, [stories]);
+
+    const initialUserIndex = useMemo(() => {
+      if (!initialUser || storiesByUser.length === 0) return 0;
+      const index = storiesByUser.findIndex(userStories => userStories[0]?.userId === initialUser);
+      return index > -1 ? index : 0;
+    }, [initialUser, storiesByUser]);
+
 
     const isLoading = isUserLoading || isProfileLoading || areStoriesLoading;
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
                 <Loader2 className="h-16 w-16 animate-spin text-primary" />
             </div>
         );
@@ -53,36 +65,44 @@ export default function StoriesPage() {
     
     if (!currentUserProfile) {
          return (
-           <div className="flex items-center justify-center min-h-screen">
+           <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
                 <p className="text-xl text-slate-400">Necesitas iniciar sesión para ver las historias.</p>
            </div>
        );
     }
 
     return (
-        <div className="min-h-screen flex flex-col">
-            <Header coinBalance={currentUserProfile?.coinBalance ?? 0}/>
-            <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center gap-8">
-                <div className="w-full flex justify-between items-center">
-                    <h1 className="text-3xl font-headline text-white">Historias</h1>
-                     <Link href="/stories/upload" passHref>
-                        <Button>
-                            <PlusCircle className="mr-2 h-5 w-5" />
-                            Subir Historia
-                        </Button>
-                    </Link>
-                </div>
-
+        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center">
+            <Link href="/" passHref className="absolute top-4 right-4 z-50">
+                <Button variant="ghost" size="icon" className="text-white h-12 w-12 rounded-full bg-white/10 hover:bg-white/20">
+                    <X className="h-8 w-8" />
+                </Button>
+            </Link>
+            <div className="w-full h-full flex items-center justify-center">
                 {storiesByUser && storiesByUser.length > 0 ? (
-                    <StoriesView groupedStories={storiesByUser} currentUserProfile={currentUserProfile} />
+                    <StoriesView groupedStories={storiesByUser} currentUserProfile={currentUserProfile} initialUserIndex={initialUserIndex} />
                 ) : (
-                    <div className="text-center py-16 bg-card border border-border rounded-lg w-full max-w-4xl">
+                    <div className="text-center py-16 w-full max-w-4xl">
                         <p className="text-slate-400 font-bold text-lg">No hay historias activas.</p>
                         <p className="text-slate-500 mt-2">¡Sé el primero en subir una!</p>
+                         <Link href="/stories/upload" passHref className="mt-4 inline-block">
+                            <Button>
+                                <PlusCircle className="mr-2 h-5 w-5" />
+                                Subir Historia
+                            </Button>
+                        </Link>
                     </div>
                 )}
-            </main>
-            <Footer />
+            </div>
         </div>
     );
+}
+
+
+export default function StoriesPage() {
+    return (
+        <Suspense fallback={<div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+            <StoriesPageContent />
+        </Suspense>
+    )
 }

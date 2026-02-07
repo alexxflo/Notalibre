@@ -13,8 +13,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Send, Search, Users, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { cn } from '@/lib/utils';
 
 function MessagesContent() {
@@ -166,10 +164,9 @@ function MessagesContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header coinBalance={currentUserProfile.coinBalance} />
+    <div className="min-h-screen flex flex-col bg-background">
       <main className="flex-grow container mx-auto p-4 md:p-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 h-[calc(100vh-100px)]">
           
           {/* Left Column: Search and Chat List */}
           <div className="md:col-span-1 lg:col-span-1 bg-card border border-border rounded-lg flex flex-col">
@@ -180,7 +177,7 @@ function MessagesContent() {
                   placeholder="Buscar usuarios..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-slate-900"
+                  className="pl-10 bg-background"
                 />
               </div>
             </div>
@@ -271,7 +268,7 @@ function MessagesContent() {
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       placeholder="Escribe un mensaje..."
-                      className="bg-slate-800"
+                      className="bg-background"
                       autoComplete="off"
                     />
                     <Button type="submit" size="icon" disabled={!newMessage.trim() || areMessagesLoading}><Send /></Button>
@@ -288,7 +285,6 @@ function MessagesContent() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

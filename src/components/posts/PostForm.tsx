@@ -14,12 +14,13 @@ import { UserProfile } from '@/types';
 
 type PostFormProps = {
     userProfile: UserProfile;
+    onPostCreated?: () => void;
 };
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_DATA_URL_BYTES = 1024 * 1024; // 1 MiB (Firestore limit)
 
-export default function PostForm({ userProfile }: PostFormProps) {
+export default function PostForm({ userProfile, onPostCreated }: PostFormProps) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [text, setText] = useState('');
@@ -99,6 +100,7 @@ export default function PostForm({ userProfile }: PostFormProps) {
                 fileInputRef.current.value = "";
             }
             toast({ title: "¡Éxito!", description: "Tu publicación ha sido compartida." });
+            onPostCreated?.();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: error.message });
         } finally {

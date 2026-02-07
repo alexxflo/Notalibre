@@ -4,8 +4,6 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/types';
 import { Loader2 } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import StoryUploader from '@/components/stories/StoryUploader';
 
 export default function UploadStoryPage() {
@@ -35,14 +33,12 @@ export default function UploadStoryPage() {
 
     return (
         <div className="min-h-screen flex flex-col">
-            <Header coinBalance={currentUserProfile.coinBalance} />
             <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center gap-8">
                 <div className="w-full max-w-2xl">
                     <h1 className="text-3xl font-headline text-white mb-8 text-center">Subir una Nueva Historia</h1>
                     <StoryUploader userProfile={currentUserProfile} />
                 </div>
             </main>
-            <Footer />
         </div>
     );
 }

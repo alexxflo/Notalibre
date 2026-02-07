@@ -6,7 +6,7 @@
   :root {
     --background: 224 71.4% 4.1%;
     --foreground: 210 20% 98%;
-    --card: 216 34% 17%;
+    --card: 224 71.4% 8%;
     --card-foreground: 210 20% 98%;
     --popover: 224 71.4% 4.1%;
     --popover-foreground: 210 20% 98%;
@@ -32,7 +32,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-slate-900 text-foreground;
-    background-image: linear-gradient(to bottom right, #020617, #000000);
+    @apply bg-background text-foreground;
   }
 }

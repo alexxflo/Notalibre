@@ -3,6 +3,8 @@ import Script from 'next/script';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
+import Sidebar from '@/components/layout/Sidebar';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'VORTEX - Social Engine Protocol',
@@ -24,9 +26,14 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased">
+      <body className="font-body antialiased bg-background">
         <FirebaseClientProvider>
-          {children}
+          <div className="md:flex">
+            <Sidebar />
+            <main className="flex-1 md:pl-72">
+               {children}
+            </main>
+          </div>
           <Toaster />
         </FirebaseClientProvider>
       </body>

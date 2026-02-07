@@ -38,8 +38,6 @@ export default function MainFeed({ userProfile }: { userProfile: UserProfile }) 
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-8">
-        <PostForm userProfile={userProfile} />
-        
         <div className="w-full space-y-6">
           {arePostsLoading && Array.from({ length: 3 }).map((_, i) => (
              <div key={i} className="bg-card p-4 rounded-lg border border-border space-y-4">

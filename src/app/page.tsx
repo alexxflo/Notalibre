@@ -2,72 +2,45 @@
 
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Loader2 } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import SignIn from '@/components/auth/SignIn';
-import ChatRoom from '@/components/ChatRoom';
-import Dashboard from '@/components/Dashboard';
+import MainFeed from '@/components/MainFeed';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { UserProfile } from '@/types';
+import SignIn from '@/components/auth/SignIn';
+import StoriesCarousel from '@/components/stories/StoriesCarousel';
 
-function AppContainer() {
-  const { user } = useUser();
+export default function Home() {
+  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  // Fetch the current user's profile
-  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
-  const handleUpdateUserProfile = (updates: { [key: string]: any }) => {
-    if (!userProfileRef) return;
-    updateDocumentNonBlocking(userProfileRef, updates);
-  };
-
-  // When logging out, `user` becomes null first, while `userProfile` might still
-  // hold stale data for one render cycle. This check ensures we show a loader
-  // during that transition, preventing crashes in child components that rely on
-  // both `user` and `userProfile` being consistent.
-  if (isProfileLoading || !userProfile || !user) {
+  if (isUserLoading || (user && isProfileLoading)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Loader2 className="h-16 w-16 animate-spin text-cyan-400" />
-        <p className="mt-4 text-slate-400">Cargando tu perfil...</p>
+      <div className="w-full max-w-2xl mx-auto p-4 md:p-8">
+        <div className="space-y-8">
+          <div className="flex items-center gap-4">
+             <Skeleton className="h-16 w-16 rounded-full" />
+             <Skeleton className="h-16 w-16 rounded-full" />
+             <Skeleton className="h-16 w-16 rounded-full" />
+             <Skeleton className="h-16 w-16 rounded-full" />
+          </div>
+          <Skeleton className="h-[200px] w-full rounded-xl" />
+          <Skeleton className="h-[400px] w-full rounded-xl" />
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Header coinBalance={userProfile.coinBalance} />
-      <Dashboard userProfile={userProfile} updateUserProfile={handleUpdateUserProfile} />
-      <ChatRoom userProfile={userProfile} />
-      <Footer />
-    </div>
-  );
-}
-
-export default function Home() {
-  const { user, isUserLoading } = useUser();
-
-  if (isUserLoading) {
-    return (
-       <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-slate-900">
-        <div className="w-full max-w-4xl space-y-8">
-          <div className="flex justify-between items-center p-4">
-            <Skeleton className="h-12 w-48 bg-slate-700" />
-            <Skeleton className="h-10 w-48 rounded-full bg-slate-700" />
-          </div>
-        </div>
-         <Skeleton className="h-[600px] w-full max-w-4xl mt-8 rounded-xl bg-slate-700" />
-      </div>
-    )
-  }
-
-  if (!user) {
+  if (!user || !userProfile) {
     return <SignIn />;
   }
 
-  return <AppContainer />;
+  return (
+      <div className="w-full max-w-2xl mx-auto p-4 md:p-8">
+          <StoriesCarousel currentUserProfile={userProfile} />
+          <MainFeed userProfile={userProfile} />
+      </div>
+  );
 }
