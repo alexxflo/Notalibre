@@ -20,7 +20,7 @@ function AppContainer() {
   const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
-  const handleUpdateUserProfile = (updates: Partial<UserProfile>) => {
+  const handleUpdateUserProfile = (updates: { [key: string]: any }) => {
     if (!userProfileRef) return;
     updateDocumentNonBlocking(userProfileRef, updates);
   };

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useState } from 'react';
 import type { UserProfile } from '@/types';
 import { Gem, Rocket, Users, Shield, Home } from 'lucide-react';
@@ -20,7 +20,7 @@ type View = 'feed' | 'earn' | 'shop' | 'admin';
 const ADMIN_UID = 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
 const CREATOR_ID = 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
 
-export default function Dashboard({ userProfile, updateUserProfile }: { userProfile: UserProfile, updateUserProfile: (updates: Partial<UserProfile>) => void }) {
+export default function Dashboard({ userProfile, updateUserProfile }: { userProfile: UserProfile, updateUserProfile: (updates: { [key: string]: any }) => void }) {
     const [view, setView] = useState<View>('feed');
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [showCampaignGate, setShowCampaignGate] = useState(false);
