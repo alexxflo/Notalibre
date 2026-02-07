@@ -5,12 +5,12 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC2Y5I3hXgG_s0C_Xk9wL5zT-1NqTohI",
-  authDomain: "vortex-social-engine.firebaseapp.com",
-  projectId: "vortex-social-engine",
-  storageBucket: "vortex-social-engine.appspot.com",
-  messagingSenderId: "365691084221",
-  appId: "1:365691084221:web:d263a2c53f8c8577983b7c"
+  "projectId": "studio-8356722446-5a6c6",
+  "appId": "1:894641861323:web:2ac2dea31786d0badae14e",
+  "apiKey": "AIzaSyDWUR7HC6dZp3DcsrnSjz2JPrBCDmM5yCs",
+  "authDomain": "studio-8356722446-5a6c6.firebaseapp.com",
+  "measurementId": "",
+  "messagingSenderId": "894641861323"
 };
 
 export function initializeFirebase() {
