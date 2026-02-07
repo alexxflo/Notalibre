@@ -3,6 +3,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   "projectId": "studio-8356722446-5a6c6",
@@ -10,7 +11,8 @@ const firebaseConfig = {
   "apiKey": "AIzaSyDWUR7HC6dZp3DcsrnSjz2JPrBCDmM5yCs",
   "authDomain": "studio-8356722446-5a6c6.firebaseapp.com",
   "measurementId": "",
-  "messagingSenderId": "894641861323"
+  "messagingSenderId": "894641861323",
+  "storageBucket": "studio-8356722446-5a6c6.appspot.com"
 };
 
 export function initializeFirebase() {
@@ -30,7 +32,8 @@ export function getSdks(firebaseApp: FirebaseApp) {
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
+    firestore: getFirestore(firebaseApp),
+    storage: getStorage(firebaseApp)
   };
 }
 

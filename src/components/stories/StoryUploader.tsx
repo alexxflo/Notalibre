@@ -2,8 +2,9 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useStorage } from '@/firebase';
 import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -20,6 +21,7 @@ const MAX_DURATION = 50; // seconds
 
 export default function StoryUploader({ userProfile }: StoryUploaderProps) {
     const firestore = useFirestore();
+    const storage = useStorage();
     const { toast } = useToast();
     const router = useRouter();
     const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -42,13 +44,14 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
         videoElement.preload = 'metadata';
         videoElement.onloadedmetadata = () => {
             window.URL.revokeObjectURL(videoElement.src);
+            setVideoPreview(URL.createObjectURL(file)); // Show preview regardless of duration
+            setDuration(videoElement.duration);
+            
             if (videoElement.duration > MAX_DURATION) {
                 toast({ variant: 'destructive', title: 'Video demasiado largo', description: `La duración máxima es de ${MAX_DURATION} segundos.` });
-                setDuration(videoElement.duration);
+                setVideoFile(null); // Invalidate the file
             } else {
-                setDuration(videoElement.duration);
-                setVideoFile(file);
-                setVideoPreview(URL.createObjectURL(file));
+                setVideoFile(file); // Validate the file
             }
         };
         videoElement.src = URL.createObjectURL(file);
@@ -63,48 +66,49 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
         setIsLoading(true);
         setUploadProgress(0);
 
-        try {
-            // In a real app, you would upload the videoFile to Firebase Storage here
-            // and get the download URL. We will simulate this process.
-            const simulateUpload = new Promise<string>(resolve => {
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress += 10;
-                    setUploadProgress(progress);
-                    if (progress >= 100) {
-                        clearInterval(interval);
-                        // Placeholder video URL
-                        resolve('https://storage.googleapis.com/test-videos-studio/stories-placeholder.mp4');
+        const storageRef = ref(storage, `stories/${userProfile.id}/${Date.now()}-${videoFile.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, videoFile);
+
+        uploadTask.on('state_changed', 
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(progress);
+            },
+            (error) => {
+                console.error("Upload error:", error);
+                toast({ variant: 'destructive', title: 'Error de Subida', description: 'No se pudo subir el video. Inténtalo de nuevo.'});
+                setIsLoading(false);
+            },
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+                    try {
+                        const storiesCollection = collection(firestore, 'stories');
+                        const now = Timestamp.now();
+                        const expiresAt = new Timestamp(now.seconds + 24 * 60 * 60, now.nanoseconds);
+
+                        await addDoc(storiesCollection, {
+                            userId: userProfile.id,
+                            username: userProfile.username,
+                            avatarUrl: userProfile.avatarUrl,
+                            videoUrl: downloadURL,
+                            likes: [],
+                            comments: [],
+                            views: [],
+                            createdAt: now,
+                            expiresAt: expiresAt,
+                        });
+
+                        toast({ title: '¡Éxito!', description: 'Tu historia ha sido publicada.' });
+                        router.push('/stories');
+
+                    } catch (error: any) {
+                        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar la historia en la base de datos.' });
+                    } finally {
+                        setIsLoading(false);
                     }
-                }, 200);
-            });
-
-            const videoUrl = await simulateUpload;
-
-            const storiesCollection = collection(firestore, 'stories');
-            const now = Timestamp.now();
-            const expiresAt = new Timestamp(now.seconds + 24 * 60 * 60, now.nanoseconds);
-
-            await addDoc(storiesCollection, {
-                userId: userProfile.id,
-                username: userProfile.username,
-                avatarUrl: userProfile.avatarUrl,
-                videoUrl: videoUrl,
-                likes: [],
-                comments: [],
-                views: [],
-                createdAt: now,
-                expiresAt: expiresAt,
-            });
-
-            toast({ title: '¡Éxito!', description: 'Tu historia ha sido publicada.' });
-            router.push('/stories');
-
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: error.message });
-        } finally {
-            setIsLoading(false);
-        }
+                });
+            }
+        );
     };
 
     const isValid = duration !== null && duration <= MAX_DURATION;
@@ -121,7 +125,7 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
                     onClick={() => fileInputRef.current?.click()}
                 >
                     {videoPreview ? (
-                        <video src={videoPreview} className="w-full h-auto rounded-md" controls={false} />
+                        <video src={videoPreview} className="w-full h-auto rounded-md" controls={false} muted autoPlay loop/>
                     ) : (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <Video className="h-12 w-12" />
@@ -155,7 +159,7 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => router.back()}>Cancelar</Button>
-                <Button onClick={handleUpload} disabled={isLoading || !isValid}>
+                <Button onClick={handleUpload} disabled={isLoading || !videoFile || !isValid}>
                     {isLoading ? <Loader2 className="animate-spin mr-2" /> : <UploadCloud className="mr-2" />}
                     Publicar Historia
                 </Button>
