@@ -1,10 +1,21 @@
+'use client';
 import { NextRequest, NextResponse } from 'next/server';
 import { processWhatsappMessage } from '@/ai/flows/process-whatsapp-message';
 
 export async function POST(req: NextRequest) {
-  // IN A PRODUCTION ENVIRONMENT, YOU MUST SECURE THIS ENDPOINT!
-  // This endpoint is publicly accessible and should be protected, for example
-  // by verifying a secret token sent with the request.
+  // Check for the secret token in query parameters
+  const secret = req.nextUrl.searchParams.get('secret');
+  const expectedSecret = process.env.WHATSAPP_WEBHOOK_SECRET;
+
+  if (!expectedSecret) {
+      console.error('CRITICAL: WHATSAPP_WEBHOOK_SECRET is not set in environment variables.');
+      // Do not expose details about the missing secret to the client.
+      return NextResponse.json({ success: false, message: 'Internal Server Configuration Error' }, { status: 500 });
+  }
+
+  if (secret !== expectedSecret) {
+    return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+  }
 
   try {
     const body = await req.json();
