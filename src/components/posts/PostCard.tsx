@@ -26,13 +26,14 @@ import { useToast } from '@/hooks/use-toast';
 type PostCardProps = {
     post: Post;
     currentUserProfile: UserProfile | null;
+    commentsVisibleByDefault?: boolean;
 };
 
-export default function PostCard({ post, currentUserProfile }: PostCardProps) {
+export default function PostCard({ post, currentUserProfile, commentsVisibleByDefault = false }: PostCardProps) {
     const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const [showComments, setShowComments] = useState(false);
+    const [showComments, setShowComments] = useState(commentsVisibleByDefault);
     
     const isLiked = user ? post.likes.includes(user.uid) : false;
     const postRef = doc(firestore, 'posts', post.id);

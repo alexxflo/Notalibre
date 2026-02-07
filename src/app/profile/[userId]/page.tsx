@@ -23,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { PostDetailDialog } from '@/components/posts/PostDetailDialog';
 
 
 function ProfileHeader({ profile, currentUserProfile, postCount, onEditClick, auth }: { profile: UserProfile, currentUserProfile: UserProfile | null, postCount: number, onEditClick: () => void, auth: Auth }) {
@@ -178,6 +179,7 @@ export default function ProfilePage() {
     const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
     const auth = useAuth();
     
+    const [selectedPost, setSelectedPost] = useState<Post | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     const previousUserRef = useRef(currentUser);
@@ -278,7 +280,11 @@ export default function ProfilePage() {
                         ) : posts && posts.length > 0 ? (
                             <div className="grid grid-cols-3 gap-1">
                                 {posts.map(post => (
-                                    <div key={post.id} className="aspect-square relative group bg-muted overflow-hidden">
+                                    <div 
+                                      key={post.id} 
+                                      className="aspect-square relative group bg-muted overflow-hidden cursor-pointer"
+                                      onClick={() => setSelectedPost(post)}
+                                    >
                                         <Image src={post.imageUrl!} alt={"Post de " + post.username} fill className="object-cover group-hover:opacity-75 transition-opacity" />
                                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 text-white">
                                             <div className="flex items-center gap-1">
@@ -303,6 +309,16 @@ export default function ProfilePage() {
                     </TabsContent>
                 </Tabs>
             </main>
+             <PostDetailDialog 
+                post={selectedPost}
+                currentUserProfile={currentUserProfile}
+                open={!!selectedPost}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setSelectedPost(null);
+                    }
+                }}
+            />
         </div>
     );
 }
