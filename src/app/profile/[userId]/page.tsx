@@ -8,14 +8,17 @@ import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@
 import { doc, collection, query, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Post } from '@/types';
-import { Loader2, Users, UserCheck, MessageSquare, Camera, Pencil, Check, X, Gem } from 'lucide-react';
+import { Loader2, Users, UserCheck, MessageSquare, Camera, Pencil, Check, X, Gem, Grid, Video, Tag } from 'lucide-react';
 import PostCard from '@/components/posts/PostCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, currentUserProfile: UserProfile | null }) {
+
+function ProfileHeader({ profile, currentUserProfile, postCount }: { profile: UserProfile, currentUserProfile: UserProfile | null, postCount: number }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -151,97 +154,103 @@ function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, 
     };
 
     return (
-        <div className="w-full max-w-4xl bg-card border border-border rounded-lg p-6 flex flex-col md:flex-row items-center gap-6">
-            <div className="relative group">
-                <Image
-                    src={profile.avatarUrl}
-                    alt={profile.username}
-                    width={128}
-                    height={128}
-                    className={cn(
-                        "rounded-full border-4 border-primary object-cover w-32 h-32",
-                        isOwnProfile && "cursor-pointer group-hover:opacity-70 transition-opacity"
-                    )}
-                    onClick={handleAvatarClick}
-                />
-                 {isOwnProfile && (
-                     <div 
-                        onClick={handleAvatarClick} 
-                        className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                    >
-                        {isUploading ? <Loader2 className="animate-spin text-white h-8 w-8" /> : <Camera className="text-white h-8 w-8" />}
-                    </div>
-                )}
-            </div>
-             <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept="image/png, image/jpeg, image/gif, image/webp"
-            />
-            <div className="flex-grow text-center md:text-left">
-                {isOwnProfile ? (
-                    <div className="flex items-center gap-2 justify-center md:justify-start">
-                        {isEditingUsername ? (
-                        <>
-                            <Input 
-                                value={newUsername} 
-                                onChange={(e) => setNewUsername(e.target.value)} 
-                                className="text-3xl font-bold text-white font-headline bg-slate-800 border-slate-600 h-12"
-                                onKeyDown={(e) => e.key === 'Enter' && handleUsernameSave()}
-                            />
-                            <Button onClick={handleUsernameSave} size="icon"><Check className="h-5 w-5" /></Button>
-                            <Button onClick={() => { setIsEditingUsername(false); setNewUsername(profile.username); }} variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
-                        </>
-                        ) : (
-                        <div className="flex items-center gap-4 flex-wrap justify-center md:justify-start">
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-3xl font-bold text-white font-headline">{profile.username}</h1>
-                                <Button onClick={() => setIsEditingUsername(true)} variant="ghost" size="icon"><Pencil className="h-5 w-5 text-slate-400 hover:text-white" /></Button>
+       <div className="w-full max-w-4xl p-4 md:p-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 items-start">
+                <div className="md:col-span-1 flex justify-center md:justify-start">
+                     <div className="relative group w-32 h-32 md:w-40 md:h-40">
+                        <Image
+                            src={profile.avatarUrl}
+                            alt={profile.username}
+                            width={160}
+                            height={160}
+                            className={cn(
+                                "rounded-full border-4 border-card object-cover w-32 h-32 md:w-40 md:h-40",
+                                isOwnProfile && "cursor-pointer group-hover:opacity-70 transition-opacity"
+                            )}
+                            onClick={handleAvatarClick}
+                        />
+                         {isOwnProfile && (
+                             <div 
+                                onClick={handleAvatarClick} 
+                                className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                            >
+                                {isUploading ? <Loader2 className="animate-spin text-white h-8 w-8" /> : <Camera className="text-white h-8 w-8" />}
                             </div>
-                            <div className="flex items-center gap-2 bg-card px-3 py-1 rounded-full border border-primary/50">
-                                <Gem className="text-primary h-5 w-5" />
-                                <span className="font-bold text-lg text-primary font-mono">{profile.coinBalance}</span>
-                            </div>
-                        </div>
                         )}
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            className="hidden"
+                            accept="image/png, image/jpeg, image/gif, image/webp"
+                        />
                     </div>
-                ) : (
-                     <div className="flex items-center gap-4 flex-wrap justify-center md:justify-start">
-                        <h1 className="text-3xl font-bold text-white font-headline">{profile.username}</h1>
-                        <div className="flex items-center gap-2 bg-card px-3 py-1 rounded-full border border-primary/50">
-                            <Gem className="text-primary h-5 w-5" />
-                            <span className="font-bold text-lg text-primary font-mono">{profile.coinBalance}</span>
+                </div>
+
+                <div className="md:col-span-2 space-y-5 text-center md:text-left">
+                    <div className="flex items-center gap-4 flex-wrap justify-center md:justify-start">
+                         {isOwnProfile ? (
+                            <div className="flex items-center gap-2">
+                                {isEditingUsername ? (
+                                <>
+                                    <Input 
+                                        value={newUsername} 
+                                        onChange={(e) => setNewUsername(e.target.value)} 
+                                        className="text-2xl font-bold text-white font-headline bg-slate-800 border-slate-600 h-11"
+                                        onKeyDown={(e) => e.key === 'Enter' && handleUsernameSave()}
+                                    />
+                                    <Button onClick={handleUsernameSave} size="icon"><Check className="h-5 w-5" /></Button>
+                                    <Button onClick={() => { setIsEditingUsername(false); setNewUsername(profile.username); }} variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
+                                </>
+                                ) : (
+                                <div className="flex items-center gap-2">
+                                    <h1 className="text-2xl font-light text-white">{profile.username}</h1>
+                                    <Button onClick={() => setIsEditingUsername(true)} variant="ghost" size="icon" className="h-8 w-8"><Pencil className="h-4 w-4 text-slate-400 hover:text-white" /></Button>
+                                </div>
+                                )}
+                            </div>
+                        ) : (
+                             <h1 className="text-2xl font-light text-white">{profile.username}</h1>
+                        )}
+                        
+                        <div className="flex items-center gap-2">
+                             {isOwnProfile ? (
+                                <>
+                                    <Button variant="outline">Editar Perfil</Button>
+                                    <div className="flex items-center gap-2 bg-card px-3 py-1 rounded-full border border-primary/50">
+                                        <Gem className="text-primary h-4 w-4" />
+                                        <span className="font-bold text-md text-primary font-mono">{profile.coinBalance}</span>
+                                    </div>
+                                </>
+                            ) : currentUserProfile && (
+                                <>
+                                    <Button onClick={handleFollowToggle} variant={isFollowing ? 'secondary' : 'default'}>
+                                        {isFollowing ? <UserCheck className="mr-2"/> : <Users className="mr-2"/>}
+                                        {isFollowing ? 'Siguiendo' : 'Seguir'}
+                                    </Button>
+                                    <Link href={`/messages?chatWith=${profile.id}`}>
+                                        <Button variant="outline" className="w-full">
+                                            <MessageSquare className="mr-2" />
+                                            Mensaje
+                                        </Button>
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </div>
-                )}
-                <p className="text-slate-400">{profile.email}</p>
-                <div className="flex gap-6 justify-center md:justify-start mt-4">
-                    <div className="text-center">
-                        <p className="text-2xl font-bold text-white">{profile.followers?.length ?? 0}</p>
-                        <p className="text-sm text-slate-500">Seguidores</p>
+                    
+                    <div className="flex items-center gap-8 justify-center md:justify-start">
+                        <div><span className="font-bold">{postCount}</span> publicaciones</div>
+                        <div><span className="font-bold">{profile.followers?.length ?? 0}</span> seguidores</div>
+                        <div><span className="font-bold">{profile.following?.length ?? 0}</span> seguidos</div>
                     </div>
-                    <div className="text-center">
-                        <p className="text-2xl font-bold text-white">{profile.following?.length ?? 0}</p>
-                        <p className="text-sm text-slate-500">Siguiendo</p>
+                    
+                     <div className="space-y-1">
+                        <p className="font-semibold text-white">{profile.username}</p>
+                         <p className="text-sm text-slate-400 whitespace-pre-line">{profile.email}</p>
                     </div>
                 </div>
             </div>
-            {!isOwnProfile && currentUserProfile && (
-                 <div className="flex flex-col sm:flex-row gap-2">
-                    <Button onClick={handleFollowToggle} variant={isFollowing ? 'secondary' : 'default'}>
-                        {isFollowing ? <UserCheck className="mr-2"/> : <Users className="mr-2"/>}
-                        {isFollowing ? 'Siguiendo' : 'Seguir'}
-                    </Button>
-                    <Link href={`/messages?chatWith=${profile.id}`}>
-                        <Button variant="outline" className="w-full">
-                            <MessageSquare className="mr-2" />
-                            Enviar Mensaje
-                        </Button>
-                    </Link>
-                </div>
-            )}
         </div>
     );
 }
@@ -253,20 +262,14 @@ export default function ProfilePage() {
     const firestore = useFirestore();
     const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
 
-    // --- Start of Logout Handling Logic ---
     const previousUserRef = useRef(currentUser);
 
     useEffect(() => {
-        // If we had a user before, but not anymore (and auth is done loading), it's a sign-out event.
         if (previousUserRef.current && !currentUser && !isAuthLoading) {
-            // Redirect to the home page, which will then correctly show the sign-in page.
             router.push('/');
         }
-        // Update the ref for the next render cycle.
         previousUserRef.current = currentUser;
     }, [currentUser, isAuthLoading, router]);
-    // --- End of Logout Handling Logic ---
-
 
     const profileRef = useMemoFirebase(() => (currentUser && userId) ? doc(firestore, 'users', userId) : null, [firestore, currentUser, userId]);
     const { data: profile, isLoading: isProfileLoading } = useDoc<UserProfile>(profileRef);
@@ -276,8 +279,6 @@ export default function ProfilePage() {
 
     const postsQuery = useMemoFirebase(() => {
         if (!firestore || !currentUser) return null;
-        // Fetch ALL posts to avoid a filter-based query that causes a misleading permission error
-        // when the required composite index is missing. We will filter on the client.
         return query(collection(firestore, 'posts'));
     }, [firestore, currentUser]);
 
@@ -291,10 +292,9 @@ export default function ProfilePage() {
         const profilePosts = allPosts.filter(post => post.userId === userId && post.imageUrl);
 
         const visiblePosts = isOwnProfile 
-            ? profilePosts // Show all posts on own profile
-            : profilePosts.filter(post => post.visibility === 'public'); // Show only public posts on others' profiles
+            ? profilePosts
+            : profilePosts.filter(post => post.visibility === 'public');
 
-        // Sort posts by creation date, newest first.
         return visiblePosts.sort((a, b) => {
                 if (a.createdAt?.toMillis && b.createdAt?.toMillis) {
                     return b.createdAt.toMillis() - a.createdAt.toMillis();
@@ -303,8 +303,6 @@ export default function ProfilePage() {
             });
     }, [allPosts, userId, isOwnProfile]);
 
-    // This is the "in-between" state when a user signs out.
-    // We show a loader while the redirect to the home page is happening.
     if (!isAuthLoading && !currentUser && previousUserRef.current) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -314,10 +312,6 @@ export default function ProfilePage() {
         );
     }
     
-    // Consolidated loading state. Show loader if...
-    // 1. Authentication state is loading.
-    // 2. The profile for the page is loading.
-    // 3. A user is logged in, but their own profile data is still loading.
     const isLoading = isAuthLoading || isProfileLoading || (!!currentUser && isCurrentUserProfileLoading);
 
     if (isLoading) {
@@ -339,22 +333,56 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen flex flex-col">
             <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center gap-8">
-                <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} />
-                <h2 className="text-2xl font-headline text-white self-start max-w-4xl w-full">Publicaciones con Imagen</h2>
-                <div className="w-full max-w-2xl space-y-6">
-                    {arePostsLoading ? (
-                        <div className="flex justify-center items-center py-16">
-                            <Loader2 className="h-12 w-12 animate-spin text-cyan-400" />
-                            <p className="ml-4">Cargando publicaciones...</p>
-                        </div>
-                    ) : posts && posts.length > 0 ? (
-                         posts.map(post => <PostCard key={post.id} post={post} currentUserProfile={currentUserProfile}/>)
-                    ) : (
-                        <div className="text-center py-16 bg-card border border-border rounded-lg">
-                            <p className="text-slate-400">Este usuario aún no ha publicado nada con imágenes.</p>
-                        </div>
-                    )}
-                </div>
+                <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} postCount={posts.length} />
+                <Separator className="w-full max-w-4xl bg-border" />
+
+                <Tabs defaultValue="grid" className="w-full max-w-4xl">
+                    <TabsList className="grid w-full grid-cols-3 bg-transparent border-b-0 justify-center">
+                        <TabsTrigger value="grid" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                            <Grid className="h-5 w-5" />
+                            <span className="hidden sm:inline ml-2 uppercase">Publicaciones</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="reels" disabled className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                            <Video className="h-5 w-5" />
+                            <span className="hidden sm:inline ml-2 uppercase">Reels</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="tagged" disabled className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                            <Tag className="h-5 w-5" />
+                             <span className="hidden sm:inline ml-2 uppercase">Etiquetado</span>
+                        </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="grid" className="mt-4">
+                        {arePostsLoading ? (
+                            <div className="flex justify-center items-center py-16">
+                                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                            </div>
+                        ) : posts && posts.length > 0 ? (
+                            <div className="grid grid-cols-3 gap-1">
+                                {posts.map(post => (
+                                    <div key={post.id} className="aspect-square relative group bg-muted overflow-hidden">
+                                        <Image src={post.imageUrl!} alt={"Post de " + post.username} fill className="object-cover group-hover:opacity-75 transition-opacity" />
+                                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 text-white">
+                                            <div className="flex items-center gap-1">
+                                                <Heart className="h-5 w-5" />
+                                                <span className="font-bold">{post.likes.length}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <MessageSquare className="h-5 w-5" />
+                                                <span className="font-bold">{post.commentCount}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-16 bg-card border border-border rounded-lg">
+                                <Camera className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                <h3 className="font-bold text-xl">Comparte Fotos</h3>
+                                <p className="text-muted-foreground mt-2">Cuando compartas fotos, aparecerán en tu perfil.</p>
+                            </div>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </main>
         </div>
     );
