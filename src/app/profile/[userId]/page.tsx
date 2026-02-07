@@ -8,7 +8,7 @@ import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@
 import { doc, collection, query, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Post } from '@/types';
-import { Loader2, Users, UserCheck, MessageSquare, Camera, Pencil, Check, X } from 'lucide-react';
+import { Loader2, Users, UserCheck, MessageSquare, Camera, Pencil, Check, X, Gem } from 'lucide-react';
 import PostCard from '@/components/posts/PostCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -195,14 +195,26 @@ function ProfileHeader({ profile, currentUserProfile }: { profile: UserProfile, 
                             <Button onClick={() => { setIsEditingUsername(false); setNewUsername(profile.username); }} variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
                         </>
                         ) : (
-                        <>
-                            <h1 className="text-3xl font-bold text-white font-headline">{profile.username}</h1>
-                            <Button onClick={() => setIsEditingUsername(true)} variant="ghost" size="icon"><Pencil className="h-5 w-5 text-slate-400 hover:text-white" /></Button>
-                        </>
+                        <div className="flex items-center gap-4 flex-wrap justify-center md:justify-start">
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-3xl font-bold text-white font-headline">{profile.username}</h1>
+                                <Button onClick={() => setIsEditingUsername(true)} variant="ghost" size="icon"><Pencil className="h-5 w-5 text-slate-400 hover:text-white" /></Button>
+                            </div>
+                            <div className="flex items-center gap-2 bg-card px-3 py-1 rounded-full border border-primary/50">
+                                <Gem className="text-primary h-5 w-5" />
+                                <span className="font-bold text-lg text-primary font-mono">{profile.coinBalance}</span>
+                            </div>
+                        </div>
                         )}
                     </div>
                 ) : (
-                     <h1 className="text-3xl font-bold text-white font-headline">{profile.username}</h1>
+                     <div className="flex items-center gap-4 flex-wrap justify-center md:justify-start">
+                        <h1 className="text-3xl font-bold text-white font-headline">{profile.username}</h1>
+                        <div className="flex items-center gap-2 bg-card px-3 py-1 rounded-full border border-primary/50">
+                            <Gem className="text-primary h-5 w-5" />
+                            <span className="font-bold text-lg text-primary font-mono">{profile.coinBalance}</span>
+                        </div>
+                    </div>
                 )}
                 <p className="text-slate-400">{profile.email}</p>
                 <div className="flex gap-6 justify-center md:justify-start mt-4">
