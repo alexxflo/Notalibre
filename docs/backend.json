@@ -27,6 +27,10 @@
           "type": "boolean",
           "description": "Whether the user has passed the initial gatekeeper modal."
         },
+        "growthPanelUnlocked": {
+          "type": "boolean",
+          "description": "Whether the user has unlocked the growth panel by completing the required steps."
+        },
         "isBlocked": {
           "type": "boolean",
           "description": "Whether the user is blocked from using the application."

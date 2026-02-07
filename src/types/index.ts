@@ -18,6 +18,7 @@ export interface UserProfile {
   avatarUrl: string;
   coinBalance: number;
   gatekeeperPassed: boolean;
+  growthPanelUnlocked?: boolean;
   isBlocked?: boolean;
   following?: string[];
   followers?: string[];

@@ -44,6 +44,7 @@ export default function SignIn() {
           avatarUrl: user.photoURL || `https://unavatar.io/${user.email}`,
           coinBalance: WELCOME_BONUS,
           gatekeeperPassed: false,
+          growthPanelUnlocked: false,
           isBlocked: false,
           following: [],
           followers: [],
