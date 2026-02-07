@@ -56,7 +56,8 @@ export interface Story {
     userId: string;
     username: string;
     avatarUrl: string;
-    videoUrl: string;
+    mediaUrl: string;
+    mediaType: 'video' | 'image';
     likes: string[];
     comments: string[];
     views: string[];

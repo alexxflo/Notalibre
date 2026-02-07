@@ -464,10 +464,15 @@
           "format": "uri",
           "description": "URL of the story creator's avatar."
         },
-        "videoUrl": {
+        "mediaUrl": {
           "type": "string",
           "format": "uri",
-          "description": "URL of the story video."
+          "description": "URL of the story video or image."
+        },
+        "mediaType": {
+          "type": "string",
+          "description": "The type of media in the story.",
+          "enum": ["video", "image"]
         },
         "likes": {
           "type": "array",
@@ -503,7 +508,8 @@
         "userId",
         "username",
         "avatarUrl",
-        "videoUrl",
+        "mediaUrl",
+        "mediaType",
         "likes",
         "comments",
         "views",
