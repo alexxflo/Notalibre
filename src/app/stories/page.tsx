@@ -3,7 +3,7 @@
 import { useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, Timestamp } from 'firebase/firestore';
+import { doc, collection, query, Timestamp } from 'firebase/firestore';
 import type { UserProfile, Story } from '@/types';
 import { Loader2, PlusCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,15 +19,25 @@ function StoriesPageContent() {
     const currentUserProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
     const { data: currentUserProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(currentUserProfileRef);
 
+    // The query is now stable and won't cause re-renders. Filtering happens on the client.
     const storiesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        // Query for stories that have not expired yet.
-        return query(collection(firestore, 'stories'), where('expiresAt', '>', Timestamp.now()));
+        return query(collection(firestore, 'stories'));
     }, [firestore]);
 
-    const { data: stories, isLoading: areStoriesLoading } = useCollection<Story>(storiesQuery);
+    const { data: allStories, isLoading: areStoriesLoading } = useCollection<Story>(storiesQuery);
 
-    // Group stories by user and sort them
+    // Filter out expired stories on the client-side
+    const stories = useMemo(() => {
+        if (!allStories) return [];
+        const now = Timestamp.now();
+        // Ensure expiresAt exists before comparing, then sort
+        return allStories
+            .filter(story => story.expiresAt && story.expiresAt.toMillis() > now.toMillis())
+            .sort((a, b) => (a.createdAt?.toMillis() ?? 0) - (b.createdAt?.toMillis() ?? 0));
+    }, [allStories]);
+
+    // Group stories by user
     const storiesByUser = useMemo(() => {
         if (!stories) return [];
         const grouped: { [userId: string]: Story[] } = {};
@@ -38,11 +48,7 @@ function StoriesPageContent() {
             grouped[story.userId].push(story);
         });
 
-        // Sort stories within each user group by creation date
-        Object.values(grouped).forEach(userStories => {
-            userStories.sort((a, b) => (a.createdAt?.toMillis() ?? 0) - (b.createdAt?.toMillis() ?? 0));
-        });
-
+        // The inner stories are already sorted by date from the previous step
         return Object.values(grouped);
     }, [stories]);
 

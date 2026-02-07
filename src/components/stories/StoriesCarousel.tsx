@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, Timestamp } from 'firebase/firestore';
+import { collection, query, Timestamp } from 'firebase/firestore';
 import type { UserProfile, Story } from '@/types';
 import { Loader2, Plus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,20 +14,29 @@ import { cn } from '@/lib/utils';
 export default function StoriesCarousel({ currentUserProfile }: { currentUserProfile: UserProfile }) {
     const firestore = useFirestore();
 
+    // The query is now stable and won't cause re-renders. Filtering happens on the client.
     const storiesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        // Query for stories that have not expired yet.
-        return query(collection(firestore, 'stories'), where('expiresAt', '>', Timestamp.now()));
+        return query(collection(firestore, 'stories'));
     }, [firestore]);
 
-    const { data: stories, isLoading: areStoriesLoading } = useCollection<Story>(storiesQuery);
+    const { data: allStories, isLoading: areStoriesLoading } = useCollection<Story>(storiesQuery);
+
+    // Filter expired stories on the client-side
+    const activeStories = useMemo(() => {
+        if (!allStories) return [];
+        const now = Timestamp.now();
+        // Ensure expiresAt exists before comparing
+        return allStories.filter(story => story.expiresAt && story.expiresAt.toMillis() > now.toMillis());
+    }, [allStories]);
+
 
     // Group stories by user and sort them to show the current user's stories first
     const sortedStoriesByUser = useMemo(() => {
-        if (!stories) return [];
+        if (!activeStories) return [];
         
         const grouped: { [userId: string]: Story[] } = {};
-        stories.forEach(story => {
+        activeStories.forEach(story => {
             if (!grouped[story.userId]) {
                 grouped[story.userId] = [];
             }
@@ -49,7 +58,7 @@ export default function StoriesCarousel({ currentUserProfile }: { currentUserPro
 
         // The user's story should be first.
         return [...myStories, ...otherStories];
-    }, [stories, currentUserProfile.id]);
+    }, [activeStories, currentUserProfile.id]);
 
     if (areStoriesLoading) {
         return (
