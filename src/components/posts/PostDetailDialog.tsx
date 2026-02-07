@@ -1,6 +1,6 @@
 'use client';
 
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import PostCard from '@/components/posts/PostCard';
 import { Post, UserProfile } from '@/types';
 
@@ -19,6 +19,10 @@ export function PostDetailDialog({ post, currentUserProfile, open, onOpenChange 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 bg-transparent border-0 w-auto max-w-4xl shadow-none">
+          {/* Visually hidden title for accessibility */}
+          <DialogHeader className="sr-only">
+            <DialogTitle>Publicación de {post.username}</DialogTitle>
+          </DialogHeader>
           {/* commentsVisibleByDefault makes the comment section open by default in this view */}
           <PostCard post={post} currentUserProfile={currentUserProfile} commentsVisibleByDefault={true} />
       </DialogContent>
