@@ -464,6 +464,13 @@
             "type": "string"
           }
         },
+        "views": {
+          "type": "array",
+          "description": "Array of user IDs who have viewed the story.",
+          "items": {
+            "type": "string"
+          }
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp when the story was created."
@@ -480,6 +487,7 @@
         "videoUrl",
         "likes",
         "comments",
+        "views",
         "createdAt",
         "expiresAt"
       ]

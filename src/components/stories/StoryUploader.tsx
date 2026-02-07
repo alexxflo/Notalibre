@@ -92,6 +92,7 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
                 videoUrl: videoUrl,
                 likes: [],
                 comments: [],
+                views: [],
                 createdAt: now,
                 expiresAt: expiresAt,
             });

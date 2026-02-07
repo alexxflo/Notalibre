@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Story, UserProfile } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageSquare, Trash2, Loader2, Play, Pause } from 'lucide-react';
+import { Heart, MessageSquare, Trash2, Loader2, Play, Pause, Eye } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -55,33 +55,36 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
     }
   }, [api]);
 
-  // Effect to handle VIDEO SOURCE changes
+  // Main video effect to handle source changes, listeners, and playback
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !currentStory) return;
 
-    setProgress(0);
-    setIsPaused(false); // Always attempt to play new story
-
-    if (video.src !== currentStory.videoUrl) {
-      video.src = currentStory.videoUrl;
-    }
-    video.load(); // Explicitly load the new source
-
-  }, [currentStory]);
-  
-  // Effect to handle PLAYBACK and TIME updates
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    const handleCanPlay = () => {
+      if (isPaused) return;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          if (err.name !== 'AbortError') {
+            console.error('Video play failed:', err);
+            setIsPaused(true);
+          }
+        });
+      }
+      
+      if (currentUserProfile && !currentStory.views.includes(currentUserProfile.id)) {
+        const storyRef = doc(firestore, 'stories', currentStory.id);
+        updateDoc(storyRef, { views: arrayUnion(currentUserProfile.id) });
+      }
+    };
 
     const handleTimeUpdate = () => {
-      if (!isNaN(video.duration) && video.duration > 0) {
+      if (video && video.duration > 0) {
         setProgress((video.currentTime / video.duration) * 100);
       }
     };
 
-    const handleVideoEnd = () => {
+    const handleEnded = () => {
       if (currentStoryIndex < currentUserStories.length - 1) {
         setCurrentStoryIndex(prev => prev + 1);
       } else if (selectedUserIndex < groupedStories.length - 1) {
@@ -89,29 +92,42 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
       }
     };
 
+    setProgress(0);
+    video.src = currentStory.videoUrl;
+    
+    video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('ended', handleVideoEnd);
+    video.addEventListener('ended', handleEnded);
+
+    video.load();
+
+    return () => {
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('ended', handleEnded);
+      video.pause();
+      video.removeAttribute('src');
+    };
+  }, [currentStory]); // Re-runs ONLY when the story changes
+
+  // Effect for handling manual pause/play by the user
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
 
     if (isPaused) {
       video.pause();
-    } else {
+    } else if (video.readyState >= 3) { // HAVE_FUTURE_DATA
       const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          if (error.name !== 'AbortError') {
-            console.error("Error attempting to play video:", error);
-            setIsPaused(true); // If a real error occurs, force pause
+      if(playPromise !== undefined) {
+        playPromise.catch(err => {
+          if(err.name !== 'AbortError') {
+            console.error("Manual play failed:", err);
           }
-        });
+        })
       }
     }
-    
-    return () => {
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('ended', handleVideoEnd);
-    };
-  }, [isPaused, currentStory, api, currentStoryIndex, selectedUserIndex, currentUserStories, groupedStories.length]);
-
+  }, [isPaused]);
 
   if (!currentStory) {
     return (
@@ -137,7 +153,6 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
       try {
         await deleteDoc(storyRef);
         toast({ description: "Historia eliminada." });
-        // Give toast time to show before reload
         setTimeout(() => {
             window.location.reload();
         }, 1000);
@@ -177,7 +192,14 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
       </Carousel>
 
       <div className="relative w-full max-w-md mx-auto mt-8 h-[80vh] bg-black rounded-2xl overflow-hidden shadow-2xl shadow-primary/20 border-2 border-primary">
-        <video ref={videoRef} className="w-full h-full object-cover" onClick={() => setIsPaused(!isPaused)} playsInline />
+        <video 
+            ref={videoRef} 
+            key={currentStory.id}
+            className="w-full h-full object-cover" 
+            onClick={() => setIsPaused(!isPaused)} 
+            playsInline 
+            muted
+        />
         
         <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/70 to-transparent">
             <div className="flex items-center gap-2 mb-2">
@@ -213,6 +235,12 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
         )}
         
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent flex items-center justify-end gap-4">
+           <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="text-white rounded-full">
+                    <Eye />
+                </Button>
+                <span className="text-white font-bold">{currentStory.views.length}</span>
+           </div>
            <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon" onClick={handleLike} className={cn("text-white rounded-full", isLiked && "text-red-500 bg-white/20")}>
                     <Heart />

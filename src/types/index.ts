@@ -55,6 +55,7 @@ export interface Story {
     videoUrl: string;
     likes: string[];
     comments: string[];
+    views: string[];
     createdAt: Timestamp;
     expiresAt: Timestamp;
 }
