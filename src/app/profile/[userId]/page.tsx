@@ -82,79 +82,88 @@ function ProfileHeader({ profile, currentUserProfile, postCount, onEditClick, au
 
     return (
        <div className="w-full max-w-4xl p-4 md:p-0">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 items-start">
-                <div className="md:col-span-1 flex justify-center md:justify-start">
-                     <div className="relative group w-32 h-32 md:w-40 md:h-40">
-                        <Image
-                            src={profile.avatarUrl}
-                            alt={profile.username}
-                            width={160}
-                            height={160}
-                            className={cn(
-                                "rounded-full border-4 border-card object-cover w-32 h-32 md:w-40 md:h-40"
-                            )}
-                        />
+            {/* Main container for header content */}
+            <div className="flex flex-col gap-4">
+                
+                {/* TOP ROW: Avatar on left, stats on right */}
+                <div className="flex items-center gap-4 md:gap-8">
+                    <div className="flex-shrink-0 w-24 h-24 md:w-40 md:h-40">
+                        <div className="relative w-full h-full">
+                            <Image
+                                src={profile.avatarUrl}
+                                alt={profile.username}
+                                fill
+                                className="rounded-full border-4 border-card object-cover"
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="flex flex-1 items-center justify-around text-center">
+                        <div className="flex flex-col items-center">
+                            <span className="font-bold text-lg md:text-xl">{postCount}</span>
+                            <span className="text-sm text-slate-400">publicaciones</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="font-bold text-lg md:text-xl">{profile.followers?.length ?? 0}</span>
+                            <span className="text-sm text-slate-400">seguidores</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <span className="font-bold text-lg md:text-xl">{profile.following?.length ?? 0}</span>
+                            <span className="text-sm text-slate-400">seguidos</span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="md:col-span-2 space-y-5 text-center md:text-left">
-                    <div className="flex items-center gap-4 flex-wrap justify-center md:justify-start">
-                        <h1 className="text-2xl font-light text-white">{profile.username}</h1>
-                        <div className="flex items-center gap-2 bg-card px-3 py-1 rounded-full border border-primary/50">
-                            <Gem className="text-primary h-4 w-4" />
-                            <span className="font-bold text-md text-primary font-mono">{profile.coinBalance}</span>
+                {/* BIO SECTION: Username, bio, coin balance, links */}
+                <div className="space-y-2 text-left">
+                    <div className="flex items-center gap-2">
+                         <h1 className="text-lg font-semibold text-white">{profile.username}</h1>
+                         <div className="flex items-center gap-2 bg-card px-2 py-0.5 rounded-full border border-primary/50">
+                            <Gem className="text-primary h-3 w-3" />
+                            <span className="font-bold text-sm text-primary font-mono">{profile.coinBalance}</span>
                         </div>
-                        
-                        <div className="flex items-center gap-2">
-                             {isOwnProfile ? (
-                                <>
-                                    <Button variant="outline" onClick={onEditClick}>Editar Perfil</Button>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon">
-                                                <MoreHorizontal className="h-5 w-5" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="bg-slate-900 border-slate-700 text-white">
-                                            <DropdownMenuItem onClick={handleSignOut} className="text-red-400 focus:bg-red-900/50 focus:text-red-300 cursor-pointer">
-                                                <LogOut className="mr-2 h-4 w-4" />
-                                                <span>Cerrar Sesión</span>
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </>
-                            ) : currentUserProfile && (
-                                <>
-                                    <Button onClick={handleFollowToggle} variant={isFollowing ? 'secondary' : 'default'}>
-                                        {isFollowing ? <UserCheck className="mr-2"/> : <Users className="mr-2"/>}
-                                        {isFollowing ? 'Siguiendo' : 'Seguir'}
+                    </div>
+                    <p className="text-sm text-slate-400 whitespace-pre-line">{profile.email}</p>
+                    <div className="flex items-center gap-4 pt-1">
+                        {profile.instagramUrl && <a href={profile.instagramUrl} target="_blank" rel="noopener noreferrer" title="Instagram"><InstagramIcon className="h-5 w-5 text-slate-400 hover:text-white transition-colors" /></a>}
+                        {profile.tiktokUrl && <a href={profile.tiktokUrl} target="_blank" rel="noopener noreferrer" title="TikTok"><TikTokIcon className="h-5 w-5 text-slate-400 hover:text-white transition-colors" /></a>}
+                        {profile.facebookUrl && <a href={profile.facebookUrl} target="_blank" rel="noopener noreferrer" title="Facebook"><FacebookIcon className="h-5 w-5 text-slate-400 hover:text-white transition-colors" /></a>}
+                    </div>
+                </div>
+
+                {/* BUTTONS SECTION */}
+                <div className="flex items-center gap-2 w-full">
+                    {isOwnProfile ? (
+                        <>
+                            <Button variant="outline" onClick={onEditClick} className="flex-1">Editar Perfil</Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <MoreHorizontal className="h-5 w-5" />
                                     </Button>
-                                    <Link href={`/messages?chatWith=${profile.id}`}>
-                                        <Button variant="outline" className="w-full">
-                                            <MessageSquare className="mr-2" />
-                                            Mensaje
-                                        </Button>
-                                    </Link>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-8 justify-center md:justify-start">
-                        <div><span className="font-bold">{postCount}</span> publicaciones</div>
-                        <div><span className="font-bold">{profile.followers?.length ?? 0}</span> seguidores</div>
-                        <div><span className="font-bold">{profile.following?.length ?? 0}</span> seguidos</div>
-                    </div>
-                    
-                     <div className="space-y-2">
-                        <p className="font-semibold text-white">{profile.username}</p>
-                         <p className="text-sm text-slate-400 whitespace-pre-line">{profile.email}</p>
-                        <div className="flex items-center gap-4 justify-center md:justify-start pt-2">
-                            {profile.instagramUrl && <a href={profile.instagramUrl} target="_blank" rel="noopener noreferrer" title="Instagram"><InstagramIcon className="h-6 w-6 text-slate-400 hover:text-white transition-colors" /></a>}
-                            {profile.tiktokUrl && <a href={profile.tiktokUrl} target="_blank" rel="noopener noreferrer" title="TikTok"><TikTokIcon className="h-6 w-6 text-slate-400 hover:text-white transition-colors" /></a>}
-                            {profile.facebookUrl && <a href={profile.facebookUrl} target="_blank" rel="noopener noreferrer" title="Facebook"><FacebookIcon className="h-6 w-6 text-slate-400 hover:text-white transition-colors" /></a>}
-                        </div>
-                    </div>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="bg-slate-900 border-slate-700 text-white">
+                                    <DropdownMenuItem onClick={handleSignOut} className="text-red-400 focus:bg-red-900/50 focus:text-red-300 cursor-pointer">
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        <span>Cerrar Sesión</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </>
+                    ) : currentUserProfile && (
+                        <>
+                            <Button onClick={handleFollowToggle} variant={isFollowing ? 'secondary' : 'default'} className="flex-1">
+                                {isFollowing ? <UserCheck className="mr-2"/> : <Users className="mr-2"/>}
+                                {isFollowing ? 'Siguiendo' : 'Seguir'}
+                            </Button>
+                            <Link href={`/messages?chatWith=${profile.id}`} className="flex-1">
+                                <Button variant="outline" className="w-full">
+                                    <MessageSquare className="mr-2" />
+                                    Mensaje
+                                </Button>
+                            </Link>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
