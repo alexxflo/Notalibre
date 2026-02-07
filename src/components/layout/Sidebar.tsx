@@ -6,7 +6,7 @@ import { Home, MessageSquare, Heart, PlusSquare, User, LayoutGrid, Rocket, LogOu
 import { useUser, useAuth } from '@/firebase';
 import { cn } from '@/lib/utils';
 import VortexLogo from '@/components/VortexLogo';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import NotificationBell from '@/components/NotificationBell';
 import UserMenu from '../auth/UserMenu';
 import { useState } from 'react';
@@ -86,14 +86,16 @@ export default function Sidebar() {
                     <NavLink href="/" icon={Home}>Inicio</NavLink>
                     <NavLink href="/messages" icon={MessageSquare}>Mensajes</NavLink>
                     <div className="relative">
-                         <Button
-                            variant="ghost"
-                            className="w-full justify-start text-lg h-auto py-3 px-4 text-muted-foreground hover:bg-accent/50 hover:text-white"
+                         <div
+                            className={cn(
+                                buttonVariants({ variant: 'ghost' }),
+                                "w-full justify-start text-lg h-auto py-3 px-4 text-muted-foreground hover:bg-accent/50 hover:text-white"
+                            )}
                         >
                             <Heart className="mr-4 h-7 w-7" />
                             <span className="font-headline flex-1 text-left">Notificaciones</span>
                             <NotificationBell />
-                        </Button>
+                        </div>
                     </div>
                     <CreatePostButton userProfile={user as unknown as UserProfile} />
                     <NavLink href="/panel" icon={LayoutGrid}>Panel</NavLink>
