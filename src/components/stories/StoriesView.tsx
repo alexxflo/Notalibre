@@ -149,7 +149,7 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
       </Carousel>
 
       <div className="relative w-full max-w-md mx-auto mt-8 h-[80vh] bg-black rounded-2xl overflow-hidden shadow-2xl shadow-primary/20 border-2 border-primary">
-        <video ref={videoRef} src={currentStory.videoUrl} className="w-full h-full object-cover" onClick={() => setIsPaused(!isPaused)} playsInline />
+        <video ref={videoRef} key={currentStory.id} src={currentStory.videoUrl} className="w-full h-full object-cover" onClick={() => setIsPaused(!isPaused)} playsInline />
         
         <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/70 to-transparent">
             <div className="flex items-center gap-2 mb-2">
