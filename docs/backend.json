@@ -31,6 +31,10 @@
           "type": "boolean",
           "description": "Whether the user is blocked from using the application."
         },
+        "lastCampaignGateCheck": {
+          "type": "string",
+          "description": "Timestamp of when the user last passed the campaign creation gate."
+        },
         "following": {
           "type": "array",
           "description": "Array of user IDs this user is following.",
@@ -498,4 +502,3 @@
     }
   }
 }
-    

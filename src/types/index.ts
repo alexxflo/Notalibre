@@ -21,6 +21,7 @@ export interface UserProfile {
   isBlocked?: boolean;
   following?: string[];
   followers?: string[];
+  lastCampaignGateCheck?: Timestamp;
 }
 
 export interface Post {
@@ -98,5 +99,3 @@ export interface PrivateMessage {
   text: string;
   createdAt?: Timestamp;
 }
-
-    
