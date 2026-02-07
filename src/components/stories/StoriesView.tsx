@@ -198,14 +198,16 @@ export default function StoriesView({ groupedStories, currentUserProfile, initia
             muted 
           />
         ) : (
-          <Image 
-             key={currentStory.id}
-             src={currentStory.mediaUrl}
-             alt="Story image"
-             fill
-             className="object-contain"
-             priority
-          />
+          currentStory.mediaUrl && (
+            <Image 
+               key={currentStory.id}
+               src={currentStory.mediaUrl}
+               alt="Story image"
+               fill
+               className="object-contain"
+               priority
+            />
+          )
         )}
         
         <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/70 to-transparent">
