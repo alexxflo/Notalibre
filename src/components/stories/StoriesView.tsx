@@ -5,10 +5,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Story, UserProfile } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Heart, MessageSquare, Send, X, Trash2, ChevronLeft, ChevronRight, Loader2, Play, Pause } from 'lucide-react';
+import { Heart, MessageSquare, Trash2, Loader2, Play, Pause } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -41,83 +39,78 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
   const currentUserStories = groupedStories[selectedUserIndex];
   const currentStory = currentUserStories?.[currentStoryIndex];
 
+  // Effect to handle Carousel API and slide changes
   useEffect(() => {
     if (api) {
-      api.on("select", () => {
+      const handleSelect = () => {
         setSelectedUserIndex(api.selectedScrollSnap());
         setCurrentStoryIndex(0);
         setProgress(0);
-      });
+        setIsPaused(false);
+      };
+      api.on("select", handleSelect);
+      return () => {
+        api.off("select", handleSelect);
+      };
     }
   }, [api]);
 
+  // Effect to handle VIDEO SOURCE changes
   useEffect(() => {
-    if (!currentStory || !videoRef.current) {
-        return;
-    }
-    const videoElement = videoRef.current;
+    const video = videoRef.current;
+    if (!video || !currentStory) return;
 
-    // When the story changes, reset progress and current time
     setProgress(0);
-    videoElement.currentTime = 0;
+    setIsPaused(false); // Always attempt to play new story
 
-    // If paused, just ensure the video is paused.
-    if (isPaused) {
-        videoElement.pause();
-        return;
+    if (video.src !== currentStory.videoUrl) {
+      video.src = currentStory.videoUrl;
     }
+    video.load(); // Explicitly load the new source
+
+  }, [currentStory]);
+  
+  // Effect to handle PLAYBACK and TIME updates
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
 
     const handleTimeUpdate = () => {
-        if (!isNaN(videoElement.duration) && videoElement.duration > 0) {
-            setProgress((videoElement.currentTime / videoElement.duration) * 100);
-        }
+      if (!isNaN(video.duration) && video.duration > 0) {
+        setProgress((video.currentTime / video.duration) * 100);
+      }
     };
 
     const handleVideoEnd = () => {
-        if (currentStoryIndex < currentUserStories.length - 1) {
-            setCurrentStoryIndex(prev => prev + 1);
-        } else {
-            if (selectedUserIndex < groupedStories.length - 1) {
-                api?.scrollNext();
-            }
-        }
+      if (currentStoryIndex < currentUserStories.length - 1) {
+        setCurrentStoryIndex(prev => prev + 1);
+      } else if (selectedUserIndex < groupedStories.length - 1) {
+        api?.scrollNext();
+      }
     };
 
-    const handleCanPlay = () => {
-        const playPromise = videoElement.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.error("Autoplay was prevented:", error);
-                setIsPaused(true); // If autoplay fails, show the play button
-            });
-        }
-    };
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('ended', handleVideoEnd);
 
-    // Add event listeners
-    videoElement.addEventListener('timeupdate', handleTimeUpdate);
-    videoElement.addEventListener('ended', handleVideoEnd);
-    videoElement.addEventListener('canplay', handleCanPlay);
-
-    // Important: When the src of a video element changes, you need to call `load()`
-    // to make the browser fetch the new media. The `key` prop on the video element
-    // should also handle this by creating a new element, but being explicit is safer.
-    videoElement.load();
+    if (isPaused) {
+      video.pause();
+    } else {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          if (error.name !== 'AbortError') {
+            console.error("Error attempting to play video:", error);
+            setIsPaused(true); // If a real error occurs, force pause
+          }
+        });
+      }
+    }
     
-    // Some browsers might not fire 'canplay' if the video is already cached.
-    // Try to play directly, and handle the promise rejection.
-    handleCanPlay();
-
-    // Cleanup function
     return () => {
-        videoElement.removeEventListener('timeupdate', handleTimeUpdate);
-        videoElement.removeEventListener('ended', handleVideoEnd);
-        videoElement.removeEventListener('canplay', handleCanPlay);
-        // It's good practice to pause the video on cleanup
-        if (!videoElement.paused) {
-            videoElement.pause();
-        }
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('ended', handleVideoEnd);
     };
-}, [currentStory, isPaused, api, currentStoryIndex, selectedUserIndex, currentUserStories]);
+  }, [isPaused, currentStory, api, currentStoryIndex, selectedUserIndex, currentUserStories, groupedStories.length]);
 
 
   if (!currentStory) {
@@ -140,11 +133,18 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
   const handleDelete = async () => {
       if(currentUserProfile.id !== currentStory.userId) return;
       const storyRef = doc(firestore, 'stories', currentStory.id);
-      await deleteDoc(storyRef);
-      toast({ description: "Historia eliminada." });
-      // Logic to move to next story or close view would be needed here
-      // For simplicity, we can just reload. In a real app, you'd manage state better.
-      window.location.reload();
+      
+      try {
+        await deleteDoc(storyRef);
+        toast({ description: "Historia eliminada." });
+        // Give toast time to show before reload
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+      } catch (error) {
+        console.error("Error deleting story:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar la historia.'});
+      }
   }
   
   const isLiked = currentStory.likes.includes(currentUserProfile.id);
@@ -177,14 +177,14 @@ export default function StoriesView({ groupedStories, currentUserProfile }: Stor
       </Carousel>
 
       <div className="relative w-full max-w-md mx-auto mt-8 h-[80vh] bg-black rounded-2xl overflow-hidden shadow-2xl shadow-primary/20 border-2 border-primary">
-        <video ref={videoRef} key={currentStory.id} src={currentStory.videoUrl} className="w-full h-full object-cover" onClick={() => setIsPaused(!isPaused)} playsInline />
+        <video ref={videoRef} className="w-full h-full object-cover" onClick={() => setIsPaused(!isPaused)} playsInline />
         
         <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/70 to-transparent">
             <div className="flex items-center gap-2 mb-2">
                 {currentUserStories.map((_, index) => (
-                    <div key={index} className="flex-1 h-1 bg-white/30 rounded-full">
+                    <div key={index} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
                        <div 
-                         className="h-1 bg-white rounded-full"
+                         className="h-1 bg-white rounded-full transition-all duration-100 ease-linear"
                          style={{ width: `${index < currentStoryIndex ? 100 : (index === currentStoryIndex ? progress : 0)}%` }}
                         />
                     </div>
