@@ -47,6 +47,18 @@ export interface Comment {
   createdAt?: Timestamp;
 }
 
+export interface Story {
+    id: string;
+    userId: string;
+    username: string;
+    avatarUrl: string;
+    videoUrl: string;
+    likes: string[];
+    comments: string[];
+    createdAt: Timestamp;
+    expiresAt: Timestamp;
+}
+
 export interface DailyStats {
     count: number;
     date: string; // YYYY-MM-DD

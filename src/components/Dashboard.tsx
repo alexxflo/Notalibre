@@ -1,7 +1,8 @@
 "use client";
 import { useState } from 'react';
+import Link from 'next/link';
 import type { UserProfile } from '@/types';
-import { Gem, Rocket, Users, Shield, Home } from 'lucide-react';
+import { Gem, Rocket, Users, Shield, Home, Clapperboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { serverTimestamp } from 'firebase/firestore';
@@ -100,6 +101,11 @@ export default function Dashboard({ userProfile, updateUserProfile }: { userProf
                 <div className="hidden md:flex flex-col w-64 gap-2">
                     <NavButton activeView={view} targetView="feed" onClick={() => setView('feed')} icon={Home}>Feed</NavButton>
                     <NavButton activeView={view} targetView="earn" onClick={() => setView('earn')} icon={Users}>Ganar Monedas</NavButton>
+                    <Link href="/stories" passHref>
+                        <Button variant={'ghost'} className="justify-start w-full text-lg py-6">
+                            <Clapperboard className="mr-4 h-6 w-6" /> Historias
+                        </Button>
+                    </Link>
                     <Button variant={'ghost'} onClick={handlePublishClick} className="justify-start w-full text-lg py-6">
                         <Rocket className="mr-4 h-6 w-6" /> Publicar Campaña
                     </Button>
@@ -118,6 +124,11 @@ export default function Dashboard({ userProfile, updateUserProfile }: { userProf
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border h-16 flex justify-around items-stretch z-30">
                  <MobileNavButton activeView={view} targetView="feed" onClick={() => setView('feed')} icon={Home}>Feed</MobileNavButton>
                  <MobileNavButton activeView={view} targetView="earn" onClick={() => setView('earn')} icon={Users}>Ganar</MobileNavButton>
+                 <Link href="/stories" passHref className="flex flex-col basis-0 flex-grow h-full p-1 items-center justify-center rounded-none text-xs gap-1 text-muted-foreground">
+                    <Button variant="ghost" className="flex flex-col h-full w-full items-center justify-center rounded-none text-xs gap-1 text-muted-foreground">
+                        <Clapperboard className="h-5 w-5" /> Historias
+                    </Button>
+                 </Link>
                  <Button
                     variant="ghost"
                     onClick={handlePublishClick}

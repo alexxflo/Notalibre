@@ -426,6 +426,63 @@
         "text",
         "createdAt"
       ]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "Represents a temporary, 24-hour story.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who created the story."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the story creator."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the story creator's avatar."
+        },
+        "videoUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the story video."
+        },
+        "likes": {
+          "type": "array",
+          "description": "Array of user IDs who have liked the story.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "comments": {
+          "type": "array",
+          "description": "Array of comments on the story.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the story was created."
+        },
+        "expiresAt": {
+          "type": "string",
+          "description": "Timestamp when the story will expire (24h after creation)."
+        }
+      },
+      "required": [
+        "userId",
+        "username",
+        "avatarUrl",
+        "videoUrl",
+        "likes",
+        "comments",
+        "createdAt",
+        "expiresAt"
+      ]
     }
   },
   "auth": {
@@ -463,6 +520,12 @@
         "$ref": "#/entities/Comment"
       },
       "description": "Stores comments for a specific post."
+    },
+    "/stories/{storyId}": {
+      "schema": {
+        "$ref": "#/entities/Story"
+      },
+      "description": "Stores temporary stories. A Cloud Function or client-side logic should be used to delete documents where 'expiresAt' has passed."
     },
     "/chats/{chatId}": {
       "schema": {

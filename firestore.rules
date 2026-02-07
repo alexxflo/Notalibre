@@ -78,6 +78,18 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && 
         (resource.data.authorId == request.auth.uid || resource.data.userId == request.auth.uid);
     }
+    
+    // REGLAS PARA HISTORIAS
+    match /stories/{storyId} {
+      // Cualquiera puede leer las historias
+      allow read: if request.auth != null;
+
+      // Solo el dueño puede crear una historia
+      allow create: if request.auth.uid == request.resource.data.userId;
+
+      // El dueño puede actualizar (likes, comments) y borrar.
+      allow update, delete: if request.auth.uid == resource.data.userId;
+    }
 
     // REGLAS PARA CAMPAÑAS
     match /campaigns/{campaignId} {
