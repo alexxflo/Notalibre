@@ -4,11 +4,12 @@ import { useMemo, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, useAuth } from '@/firebase';
 import { doc, collection, query, arrayUnion, arrayRemove, serverTimestamp } from 'firebase/firestore';
+import { signOut, Auth } from 'firebase/auth';
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { UserProfile, Post } from '@/types';
-import { Loader2, Users, UserCheck, MessageSquare, Camera, Pencil, Check, X, Gem, Grid, Video, Tag, Heart } from 'lucide-react';
+import { Loader2, Users, UserCheck, MessageSquare, Camera, Pencil, Check, X, Gem, Grid, Video, Tag, Heart, MoreHorizontal, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -16,14 +17,29 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InstagramIcon, TikTokIcon, FacebookIcon } from '@/components/icons';
 import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 
-function ProfileHeader({ profile, currentUserProfile, postCount, onEditClick }: { profile: UserProfile, currentUserProfile: UserProfile | null, postCount: number, onEditClick: () => void }) {
+function ProfileHeader({ profile, currentUserProfile, postCount, onEditClick, auth }: { profile: UserProfile, currentUserProfile: UserProfile | null, postCount: number, onEditClick: () => void, auth: Auth }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     
     const isOwnProfile = currentUserProfile?.id === profile.id;
     const isFollowing = currentUserProfile?.following?.includes(profile.id) ?? false;
+
+    const handleSignOut = async () => {
+        try {
+          await signOut(auth);
+        } catch (error) {
+          console.error('Error signing out:', error);
+          toast({ variant: 'destructive', description: 'Error al cerrar sesión.' });
+        }
+    };
     
     const handleFollowToggle = () => {
         if (!currentUserProfile) {
@@ -91,7 +107,22 @@ function ProfileHeader({ profile, currentUserProfile, postCount, onEditClick }: 
                         
                         <div className="flex items-center gap-2">
                              {isOwnProfile ? (
-                                <Button variant="outline" onClick={onEditClick}>Editar Perfil</Button>
+                                <>
+                                    <Button variant="outline" onClick={onEditClick}>Editar Perfil</Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-5 w-5" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="bg-slate-900 border-slate-700 text-white">
+                                            <DropdownMenuItem onClick={handleSignOut} className="text-red-400 focus:bg-red-900/50 focus:text-red-300 cursor-pointer">
+                                                <LogOut className="mr-2 h-4 w-4" />
+                                                <span>Cerrar Sesión</span>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </>
                             ) : currentUserProfile && (
                                 <>
                                     <Button onClick={handleFollowToggle} variant={isFollowing ? 'secondary' : 'default'}>
@@ -136,6 +167,7 @@ export default function ProfilePage() {
     const userId = params.userId as string;
     const firestore = useFirestore();
     const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
+    const auth = useAuth();
     
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
@@ -210,7 +242,7 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen flex flex-col">
             <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center gap-8">
-                <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} postCount={posts.length} onEditClick={() => setIsEditDialogOpen(true)} />
+                <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} postCount={posts.length} onEditClick={() => setIsEditDialogOpen(true)} auth={auth} />
                 {isOwnProfile && <EditProfileDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} userProfile={profile} />}
                 <Separator className="w-full max-w-4xl bg-border" />
 
