@@ -4,7 +4,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { Home, MessageSquare, PlusSquare, User, LayoutGrid, Bell, Loader2, Heart, Image as ImageIcon } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { cn } from '@/lib/utils';
 import VortexLogo from '@/components/VortexLogo';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -19,13 +19,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { Notification } from '@/types';
+import { Notification, UserProfile } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import UserMenu from '../auth/UserMenu';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { UserProfile } from '@/types';
 
 // Dynamically import the PostForm component to reduce the initial chunk size.
 const PostForm = dynamic(() => import('../posts/PostForm'), {
@@ -53,8 +52,22 @@ const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.Ele
     );
 };
 
-const CreatePostButton = ({ userProfile }: { userProfile: UserProfile }) => {
+const CreatePostButton = ({ userProfile }: { userProfile: UserProfile | null }) => {
     const [open, setOpen] = useState(false);
+
+    if (!userProfile) {
+        return (
+             <Button
+                variant="ghost"
+                className="w-full justify-start text-lg h-auto py-3 px-4 text-muted-foreground"
+                disabled
+            >
+                <PlusSquare className="mr-4 h-7 w-7" />
+                <span className="font-headline">Crear</span>
+            </Button>
+        )
+    }
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -171,6 +184,8 @@ export default function Sidebar() {
     const firestore = useFirestore();
     const [mobileCreatePostOpen, setMobileCreatePostOpen] = useState(false);
 
+    const userProfileRef = useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [firestore, user]);
+    const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
     const notificationsQuery = useMemoFirebase(() => {
         if (!user) return null;
@@ -244,7 +259,7 @@ export default function Sidebar() {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <CreatePostButton userProfile={user as unknown as UserProfile} />
+                    <CreatePostButton userProfile={userProfile} />
                     <NavLink href="/panel" icon={LayoutGrid}>Crecimiento</NavLink>
                     <NavLink href={`/profile/${userId}`} icon={User}>Perfil</NavLink>
                 </nav>
@@ -259,13 +274,13 @@ export default function Sidebar() {
                  <Link href="/messages" className="flex flex-col flex-1 items-center justify-center text-muted-foreground hover:bg-accent/50 hover:text-white"><MessageSquare/></Link>
                  <Dialog open={mobileCreatePostOpen} onOpenChange={setMobileCreatePostOpen}>
                     <DialogTrigger asChild>
-                         <button className="flex flex-col flex-1 items-center justify-center text-muted-foreground hover:bg-accent/50 hover:text-white"><PlusSquare/></button>
+                         <button disabled={!userProfile} className="flex flex-col flex-1 items-center justify-center text-muted-foreground hover:bg-accent/50 hover:text-white disabled:opacity-50 disabled:pointer-events-none"><PlusSquare/></button>
                     </DialogTrigger>
                     <DialogContent>
                          <DialogHeader>
                             <DialogTitle>Crear nueva publicación</DialogTitle>
                         </DialogHeader>
-                        <PostForm userProfile={user as unknown as UserProfile} onPostCreated={() => setMobileCreatePostOpen(false)} />
+                        {userProfile && <PostForm userProfile={userProfile} onPostCreated={() => setMobileCreatePostOpen(false)} />}
                     </DialogContent>
                  </Dialog>
                  <Link href="/panel" className="flex flex-col flex-1 items-center justify-center text-muted-foreground hover:bg-accent/50 hover:text-white"><LayoutGrid/></Link>

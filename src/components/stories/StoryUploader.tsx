@@ -177,6 +177,10 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
                     } finally {
                         setIsLoading(false);
                     }
+                }).catch((error) => {
+                    console.error("Get Download URL error:", error);
+                    toast({ variant: 'destructive', title: 'Error de Procesamiento', description: 'No se pudo obtener la URL del archivo subido.'});
+                    setIsLoading(false);
                 });
             }
         );
