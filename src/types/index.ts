@@ -22,6 +22,9 @@ export interface UserProfile {
   following?: string[];
   followers?: string[];
   lastCampaignGateCheck?: Timestamp;
+  tiktokUrl?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
 }
 
 export interface Post {

@@ -48,6 +48,21 @@
           "items": {
             "type": "string"
           }
+        },
+        "tiktokUrl": {
+            "type": "string",
+            "description": "URL of the user's TikTok profile.",
+            "format": "uri"
+        },
+        "instagramUrl": {
+            "type": "string",
+            "description": "URL of the user's Instagram profile.",
+            "format": "uri"
+        },
+        "facebookUrl": {
+            "type": "string",
+            "description": "URL of the user's Facebook profile.",
+            "format": "uri"
         }
       },
       "required": [

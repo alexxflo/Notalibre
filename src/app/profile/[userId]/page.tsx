@@ -10,109 +10,21 @@ import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/no
 import { UserProfile, Post } from '@/types';
 import { Loader2, Users, UserCheck, MessageSquare, Camera, Pencil, Check, X, Gem, Grid, Video, Tag, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InstagramIcon, TikTokIcon, FacebookIcon } from '@/components/icons';
+import { EditProfileDialog } from '@/components/profile/EditProfileDialog';
 
 
-function ProfileHeader({ profile, currentUserProfile, postCount }: { profile: UserProfile, currentUserProfile: UserProfile | null, postCount: number }) {
+function ProfileHeader({ profile, currentUserProfile, postCount, onEditClick }: { profile: UserProfile, currentUserProfile: UserProfile | null, postCount: number, onEditClick: () => void }) {
     const firestore = useFirestore();
     const { toast } = useToast();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const [isEditingUsername, setIsEditingUsername] = useState(false);
-    const [newUsername, setNewUsername] = useState(profile.username);
     
     const isOwnProfile = currentUserProfile?.id === profile.id;
     const isFollowing = currentUserProfile?.following?.includes(profile.id) ?? false;
     
-    const MAX_DATA_URL_BYTES = 1024 * 1024; // 1 MiB (Firestore limit)
-
-    const handleAvatarClick = () => {
-        if (isOwnProfile && !isUploading) {
-            fileInputRef.current?.click();
-        }
-    };
-    
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        if (!file.type.startsWith('image/')) {
-            toast({ variant: 'destructive', title: 'Archivo no válido', description: 'Por favor, selecciona una imagen.' });
-            return;
-        }
-        
-        setIsUploading(true);
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = document.createElement('img');
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 512; // Resize to a reasonable width for avatars
-                const scaleSize = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
-                canvas.width = img.width * scaleSize;
-                canvas.height = img.height * scaleSize;
-
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                     setIsUploading(false);
-                     return;
-                }
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.9); // Compress as JPEG
-
-                if (compressedDataUrl.length > MAX_DATA_URL_BYTES) {
-                    toast({ variant: 'destructive', title: 'Imagen demasiado grande', description: 'Incluso comprimida, la imagen es demasiado grande. Por favor, elige una con menor resolución.' });
-                    setIsUploading(false);
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                    return;
-                }
-                
-                const userDocRef = doc(firestore, 'users', profile.id);
-                updateDocumentNonBlocking(userDocRef, { avatarUrl: compressedDataUrl });
-
-                if (profile.followers && profile.followers.length > 0) {
-                    for (const followerId of profile.followers) {
-                        const notificationCollection = collection(firestore, 'users', followerId, 'notifications');
-                        addDocumentNonBlocking(notificationCollection, {
-                            userId: followerId,
-                            actorId: profile.id,
-                            actorUsername: profile.username,
-                            actorAvatarUrl: compressedDataUrl,
-                            type: 'avatar_change',
-                            read: false,
-                            createdAt: serverTimestamp(),
-                        });
-                    }
-                }
-
-                toast({ description: "Foto de perfil actualizada." });
-                setIsUploading(false);
-            };
-            img.src = e.target?.result as string;
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const handleUsernameSave = () => {
-        const trimmedUsername = newUsername.trim();
-        if (!trimmedUsername) {
-            toast({ variant: 'destructive', description: "El nombre de usuario no puede estar vacío." });
-            return;
-        }
-        if (trimmedUsername !== profile.username) {
-            const userDocRef = doc(firestore, 'users', profile.id);
-            updateDocumentNonBlocking(userDocRef, { username: trimmedUsername });
-            toast({ description: "Nombre de usuario actualizado." });
-        }
-        setIsEditingUsername(false);
-    };
-
     const handleFollowToggle = () => {
         if (!currentUserProfile) {
             toast({ variant: 'destructive', description: 'Necesitas iniciar sesión para seguir a alguien.' });
@@ -163,60 +75,23 @@ function ProfileHeader({ profile, currentUserProfile, postCount }: { profile: Us
                             width={160}
                             height={160}
                             className={cn(
-                                "rounded-full border-4 border-card object-cover w-32 h-32 md:w-40 md:h-40",
-                                isOwnProfile && "cursor-pointer group-hover:opacity-70 transition-opacity"
+                                "rounded-full border-4 border-card object-cover w-32 h-32 md:w-40 md:h-40"
                             )}
-                            onClick={handleAvatarClick}
-                        />
-                         {isOwnProfile && (
-                             <div 
-                                onClick={handleAvatarClick} 
-                                className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                            >
-                                {isUploading ? <Loader2 className="animate-spin text-white h-8 w-8" /> : <Camera className="text-white h-8 w-8" />}
-                            </div>
-                        )}
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            className="hidden"
-                            accept="image/png, image/jpeg, image/gif, image/webp"
                         />
                     </div>
                 </div>
 
                 <div className="md:col-span-2 space-y-5 text-center md:text-left">
                     <div className="flex items-center gap-4 flex-wrap justify-center md:justify-start">
-                         {isOwnProfile ? (
-                            <div className="flex items-center gap-2">
-                                {isEditingUsername ? (
-                                <>
-                                    <Input 
-                                        value={newUsername} 
-                                        onChange={(e) => setNewUsername(e.target.value)} 
-                                        className="text-2xl font-bold text-white font-headline bg-slate-800 border-slate-600 h-11"
-                                        onKeyDown={(e) => e.key === 'Enter' && handleUsernameSave()}
-                                    />
-                                    <Button onClick={handleUsernameSave} size="icon"><Check className="h-5 w-5" /></Button>
-                                    <Button onClick={() => { setIsEditingUsername(false); setNewUsername(profile.username); }} variant="ghost" size="icon"><X className="h-5 w-5" /></Button>
-                                </>
-                                ) : (
-                                <div className="flex items-center gap-2">
-                                    <h1 className="text-2xl font-light text-white">{profile.username}</h1>
-                                    <Button onClick={() => setIsEditingUsername(true)} variant="ghost" size="icon" className="h-8 w-8"><Pencil className="h-4 w-4 text-slate-400 hover:text-white" /></Button>
-                                </div>
-                                )}
-                            </div>
-                        ) : (
-                             <h1 className="text-2xl font-light text-white">{profile.username}</h1>
-                        )}
+                        <h1 className="text-2xl font-light text-white">{profile.username}</h1>
+                        <div className="flex items-center gap-2 bg-card px-3 py-1 rounded-full border border-primary/50">
+                            <Gem className="text-primary h-4 w-4" />
+                            <span className="font-bold text-md text-primary font-mono">{profile.coinBalance}</span>
+                        </div>
                         
                         <div className="flex items-center gap-2">
                              {isOwnProfile ? (
-                                <>
-                                    <Button variant="outline">Editar Perfil</Button>
-                                </>
+                                <Button variant="outline" onClick={onEditClick}>Editar Perfil</Button>
                             ) : currentUserProfile && (
                                 <>
                                     <Button onClick={handleFollowToggle} variant={isFollowing ? 'secondary' : 'default'}>
@@ -231,10 +106,6 @@ function ProfileHeader({ profile, currentUserProfile, postCount }: { profile: Us
                                     </Link>
                                 </>
                             )}
-                             <div className="flex items-center gap-2 bg-card px-3 py-1 rounded-full border border-primary/50">
-                                <Gem className="text-primary h-4 w-4" />
-                                <span className="font-bold text-md text-primary font-mono">{profile.coinBalance}</span>
-                            </div>
                         </div>
                     </div>
                     
@@ -244,9 +115,14 @@ function ProfileHeader({ profile, currentUserProfile, postCount }: { profile: Us
                         <div><span className="font-bold">{profile.following?.length ?? 0}</span> seguidos</div>
                     </div>
                     
-                     <div className="space-y-1">
+                     <div className="space-y-2">
                         <p className="font-semibold text-white">{profile.username}</p>
                          <p className="text-sm text-slate-400 whitespace-pre-line">{profile.email}</p>
+                        <div className="flex items-center gap-4 justify-center md:justify-start pt-2">
+                            {profile.instagramUrl && <a href={profile.instagramUrl} target="_blank" rel="noopener noreferrer" title="Instagram"><InstagramIcon className="h-6 w-6 text-slate-400 hover:text-white transition-colors" /></a>}
+                            {profile.tiktokUrl && <a href={profile.tiktokUrl} target="_blank" rel="noopener noreferrer" title="TikTok"><TikTokIcon className="h-6 w-6 text-slate-400 hover:text-white transition-colors" /></a>}
+                            {profile.facebookUrl && <a href={profile.facebookUrl} target="_blank" rel="noopener noreferrer" title="Facebook"><FacebookIcon className="h-6 w-6 text-slate-400 hover:text-white transition-colors" /></a>}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -260,6 +136,8 @@ export default function ProfilePage() {
     const userId = params.userId as string;
     const firestore = useFirestore();
     const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
+    
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     const previousUserRef = useRef(currentUser);
 
@@ -332,7 +210,8 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen flex flex-col">
             <main className="flex-grow container mx-auto p-4 md:p-8 flex flex-col items-center gap-8">
-                <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} postCount={posts.length} />
+                <ProfileHeader profile={profile} currentUserProfile={currentUserProfile} postCount={posts.length} onEditClick={() => setIsEditDialogOpen(true)} />
+                {isOwnProfile && <EditProfileDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} userProfile={profile} />}
                 <Separator className="w-full max-w-4xl bg-border" />
 
                 <Tabs defaultValue="grid" className="w-full max-w-4xl">
