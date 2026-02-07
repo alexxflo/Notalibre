@@ -18,9 +18,9 @@ type StoryUploaderProps = {
 };
 
 const MAX_VIDEO_DURATION = 15; // seconds
-const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB for videos
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB for images
-
+const MAX_VIDEO_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB for original file
+const MAX_DATA_URL_BYTES = 1024 * 1024; // 1 MiB for data URL in Firestore
 
 export default function StoryUploader({ userProfile }: StoryUploaderProps) {
     const firestore = useFirestore();
@@ -54,8 +54,8 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
         }
 
         if (file.type.startsWith('video/')) {
-            if (file.size > MAX_FILE_SIZE_BYTES) {
-                toast({ variant: 'destructive', title: 'Video demasiado pesado', description: `El tamaño máximo es ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB.` });
+            if (file.size > MAX_VIDEO_SIZE_BYTES) {
+                toast({ variant: 'destructive', title: 'Video demasiado pesado', description: `El tamaño máximo es ${MAX_VIDEO_SIZE_BYTES / 1024 / 1024}MB.` });
                 resetState();
                 return;
             }
@@ -84,15 +84,15 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
             }
             
             setMediaType('image');
+            setMediaFile(file); // Set file to enable upload button
             setDuration(null); // Not applicable for images
             
-            // Image compression logic from PostForm
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = document.createElement('img');
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 1080; // Resize to a reasonable width
+                    const MAX_WIDTH = 1080;
                     const scaleSize = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
                     canvas.width = img.width * scaleSize;
                     canvas.height = img.height * scaleSize;
@@ -101,18 +101,15 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
                     if (!ctx) return;
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                    // Compress as JPEG for smaller size
                     const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-
+                    
+                    if (compressedDataUrl.length > MAX_DATA_URL_BYTES) {
+                        toast({ variant: 'destructive', title: 'Imagen demasiado grande', description: 'Incluso comprimida, la imagen es demasiado grande. Por favor, elige una con menor resolución.' });
+                        resetState();
+                        return;
+                    }
+                    
                     setMediaPreview(compressedDataUrl);
-
-                    // Create a new File object from the compressed data URL
-                    fetch(compressedDataUrl)
-                        .then(res => res.blob())
-                        .then(blob => {
-                            const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
-                            setMediaFile(compressedFile);
-                        });
                 };
                 img.src = e.target?.result as string;
             };
@@ -128,71 +125,112 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
             toast({ variant: 'destructive', title: 'No se puede subir', description: 'Por favor, selecciona un archivo válido.' });
             return;
         }
-        if (mediaType === 'video' && (!duration || duration > MAX_VIDEO_DURATION)) {
-            toast({ variant: 'destructive', title: 'Video no válido', description: `El video debe durar ${MAX_VIDEO_DURATION} segundos o menos.` });
-            return;
-        }
 
         setIsLoading(true);
-        setUploadProgress(0);
 
-        const storageRef = ref(storage, `stories/${userProfile.id}/${Date.now()}-${mediaFile.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, mediaFile);
-
-        uploadTask.on('state_changed', 
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (error) => {
-                console.error("Upload error:", error);
-                toast({ variant: 'destructive', title: 'Error de Subida', description: 'No se pudo subir el archivo. Inténtalo de nuevo.'});
+        // Logic for Image Upload (Data URL)
+        if (mediaType === 'image') {
+            if (!mediaPreview || mediaPreview.length > MAX_DATA_URL_BYTES) {
+                toast({ variant: 'destructive', title: 'Error de Imagen', description: 'La previsualización de la imagen no es válida o es demasiado grande.' });
                 setIsLoading(false);
-            },
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
-                    try {
-                        const storiesCollection = collection(firestore, 'stories');
-                        const now = Timestamp.now();
-                        const expiresAt = new Timestamp(now.seconds + 24 * 60 * 60, now.nanoseconds);
-
-                        await addDoc(storiesCollection, {
-                            userId: userProfile.id,
-                            username: userProfile.username,
-                            avatarUrl: userProfile.avatarUrl,
-                            mediaUrl: downloadURL,
-                            mediaType: mediaType,
-                            likes: [],
-                            comments: [],
-                            views: [],
-                            createdAt: now,
-                            expiresAt: expiresAt,
-                        });
-
-                        toast({ title: '¡Éxito!', description: 'Tu historia ha sido publicada.' });
-                        router.push('/stories');
-
-                    } catch (error: any) {
-                        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar la historia en la base de datos.' });
-                    } finally {
-                        setIsLoading(false);
-                    }
-                }).catch((error) => {
-                    console.error("Get Download URL error:", error);
-                    toast({ variant: 'destructive', title: 'Error de Procesamiento', description: 'No se pudo obtener la URL del archivo subido.'});
-                    setIsLoading(false);
-                });
+                return;
             }
-        );
+
+            try {
+                const storiesCollection = collection(firestore, 'stories');
+                const now = Timestamp.now();
+                const expiresAt = new Timestamp(now.seconds + 24 * 60 * 60, now.nanoseconds);
+
+                await addDoc(storiesCollection, {
+                    userId: userProfile.id,
+                    username: userProfile.username,
+                    avatarUrl: userProfile.avatarUrl,
+                    mediaUrl: mediaPreview, // The data URL
+                    mediaType: 'image',
+                    likes: [],
+                    comments: [],
+                    views: [],
+                    createdAt: now,
+                    expiresAt: expiresAt,
+                });
+
+                toast({ title: '¡Éxito!', description: 'Tu historia ha sido publicada.' });
+                router.push('/stories');
+
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar la historia en la base de datos.' });
+                setIsLoading(false);
+            }
+            return; // End execution for images
+        }
+
+        // Logic for Video Upload (Firebase Storage)
+        if (mediaType === 'video') {
+             if (!duration || duration > MAX_VIDEO_DURATION) {
+                toast({ variant: 'destructive', title: 'Video no válido', description: `El video debe durar ${MAX_VIDEO_DURATION} segundos o menos.` });
+                setIsLoading(false);
+                return;
+            }
+            setUploadProgress(0);
+
+            const storageRef = ref(storage, `stories/${userProfile.id}/${Date.now()}-${mediaFile.name}`);
+            const uploadTask = uploadBytesResumable(storageRef, mediaFile);
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress(progress);
+                },
+                (error) => {
+                    console.error("Upload error:", error);
+                    toast({ variant: 'destructive', title: 'Error de Subida', description: 'No se pudo subir el archivo. Inténtalo de nuevo.'});
+                    setIsLoading(false);
+                },
+                () => {
+                    getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+                        try {
+                            const storiesCollection = collection(firestore, 'stories');
+                            const now = Timestamp.now();
+                            const expiresAt = new Timestamp(now.seconds + 24 * 60 * 60, now.nanoseconds);
+
+                            await addDoc(storiesCollection, {
+                                userId: userProfile.id,
+                                username: userProfile.username,
+                                avatarUrl: userProfile.avatarUrl,
+                                mediaUrl: downloadURL,
+                                mediaType: 'video',
+                                likes: [],
+                                comments: [],
+                                views: [],
+                                createdAt: now,
+                                expiresAt: expiresAt,
+                            });
+
+                            toast({ title: '¡Éxito!', description: 'Tu historia ha sido publicada.' });
+                            router.push('/stories');
+
+                        } catch (error: any) {
+                            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar la historia en la base de datos.' });
+                        } finally {
+                            setIsLoading(false);
+                        }
+                    }).catch((error) => {
+                        console.error("Get Download URL error:", error);
+                        toast({ variant: 'destructive', title: 'Error de Procesamiento', description: 'No se pudo obtener la URL del archivo subido.'});
+                        setIsLoading(false);
+                    });
+                }
+            );
+        }
     };
 
-    const isValid = mediaType === 'image' || (mediaType === 'video' && duration !== null && duration <= MAX_VIDEO_DURATION);
+    const isValid = mediaFile && (mediaType === 'image' || (mediaType === 'video' && duration !== null && duration <= MAX_VIDEO_DURATION));
 
     return (
         <Card className="w-full max-w-lg mx-auto bg-card border-border">
             <CardHeader>
                 <CardTitle>Subir Historia</CardTitle>
-                <CardDescription>Sube un video (máx. {MAX_VIDEO_DURATION}s) o una imagen. Se eliminará después de 24 horas.</CardDescription>
+                <CardDescription>Sube una imagen o un video corto (máx. {MAX_VIDEO_DURATION}s). Se eliminará después de 24 horas.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div 
@@ -209,7 +247,7 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <UploadCloud className="h-12 w-12" />
                             <p>Arrastra un archivo aquí o haz clic para seleccionar</p>
-                            <p className="text-xs">(Video o Imagen)</p>
+                            <p className="text-xs">(Imagen o Video)</p>
                         </div>
                     )}
                      <Input
@@ -223,8 +261,8 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
                 </div>
 
                 {mediaType === 'video' && duration !== null && (
-                    <div className={`flex items-center gap-2 p-3 rounded-md ${isValid ? 'bg-green-500/20 text-green-400' : 'bg-destructive/20 text-red-400'}`}>
-                        {isValid ? <CheckCircle className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
+                    <div className={`flex items-center gap-2 p-3 rounded-md ${duration <= MAX_VIDEO_DURATION ? 'bg-green-500/20 text-green-400' : 'bg-destructive/20 text-red-400'}`}>
+                        {duration <= MAX_VIDEO_DURATION ? <CheckCircle className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
                         <p className="font-medium">Duración: {duration.toFixed(1)}s / {MAX_VIDEO_DURATION}s</p>
                     </div>
                 )}
@@ -236,17 +274,24 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
                     </div>
                 )}
                 
-                {isLoading && (
+                {isLoading && mediaType === 'video' && (
                     <div className="space-y-2">
-                        <p className="text-sm text-center text-primary">Subiendo...</p>
+                        <p className="text-sm text-center text-primary">Subiendo video...</p>
                         <Progress value={uploadProgress} className="w-full" />
                     </div>
                 )}
 
+                 {isLoading && mediaType === 'image' && (
+                    <div className="flex justify-center items-center gap-2 text-primary">
+                        <Loader2 className="animate-spin" />
+                        <p>Publicando imagen...</p>
+                    </div>
+                 )}
+
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => router.back()}>Cancelar</Button>
-                <Button onClick={handleUpload} disabled={isLoading || !mediaFile || !isValid}>
+                <Button onClick={handleUpload} disabled={isLoading || !isValid}>
                     {isLoading ? <Loader2 className="animate-spin mr-2" /> : <UploadCloud className="mr-2" />}
                     Publicar Historia
                 </Button>

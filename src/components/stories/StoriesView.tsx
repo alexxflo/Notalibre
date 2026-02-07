@@ -18,7 +18,7 @@ type StoriesViewProps = {
   initialUserIndex: number;
 };
 
-const IMAGE_STORY_DURATION_MS = 5000; // 5 seconds
+const IMAGE_STORY_DURATION_MS = 10000; // 10 seconds
 
 export default function StoriesView({ groupedStories, currentUserProfile, initialUserIndex }: StoriesViewProps) {
   const [selectedUserIndex, setSelectedUserIndex] = useState(initialUserIndex);
