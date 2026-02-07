@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useUser, useFirestore } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { doc, arrayUnion, arrayRemove, collection, serverTimestamp } from 'firebase/firestore';
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,36 +30,37 @@ type PostCardProps = {
 };
 
 export default function PostCard({ post, currentUserProfile, commentsVisibleByDefault = false }: PostCardProps) {
-    const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
     const [showComments, setShowComments] = useState(commentsVisibleByDefault);
     
-    const isLiked = user ? post.likes.includes(user.uid) : false;
+    const isLiked = currentUserProfile ? post.likes.includes(currentUserProfile.id) : false;
     const postRef = doc(firestore, 'posts', post.id);
     const isOwner = currentUserProfile?.id === post.userId;
 
     const handleLikeToggle = () => {
-        if (!user || !currentUserProfile) {
+        if (!currentUserProfile) {
             toast({ variant: 'destructive', description: 'Necesitas iniciar sesión para dar me gusta.' });
             return;
         }
 
+        const currentUserId = currentUserProfile.id;
+
         if (isLiked) {
             updateDocumentNonBlocking(postRef, {
-                likes: arrayRemove(user.uid)
+                likes: arrayRemove(currentUserId)
             });
         } else {
             updateDocumentNonBlocking(postRef, {
-                likes: arrayUnion(user.uid)
+                likes: arrayUnion(currentUserId)
             });
 
             // Add notification logic, but don't notify for own post
-            if (post.userId !== user.uid) {
+            if (post.userId !== currentUserId) {
                 const notificationCollection = collection(firestore, 'users', post.userId, 'notifications');
                 addDocumentNonBlocking(notificationCollection, {
                     userId: post.userId,
-                    actorId: user.uid,
+                    actorId: currentUserId,
                     actorUsername: currentUserProfile.username,
                     actorAvatarUrl: currentUserProfile.avatarUrl,
                     type: 'new_like',
