@@ -18,7 +18,6 @@ import CampaignGateModal from './CampaignGateModal';
 type View = 'feed' | 'earn' | 'shop' | 'admin';
 
 const ADMIN_UID = 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
-const CREATOR_ID = 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
 
 export default function Dashboard({ userProfile, updateUserProfile }: { userProfile: UserProfile, updateUserProfile: (updates: { [key: string]: any }) => void }) {
     const [view, setView] = useState<View>('feed');
@@ -42,35 +41,18 @@ export default function Dashboard({ userProfile, updateUserProfile }: { userProf
             }
         }
         
-        const isFollowingCreator = userProfile.following?.includes(CREATOR_ID);
-        if (isFollowingCreator) {
-            // Is following, but gate is expired. Update timestamp and open sheet.
-            updateUserProfile({ lastCampaignGateCheck: serverTimestamp() });
-            setIsSheetOpen(true);
-            return;
-        }
-
-        // Is not following, and gate is not passed/expired. Show modal.
+        // If gate not passed or expired, show modal.
         setShowCampaignGate(true); 
     };
 
     const handleCampaignGateConfirm = () => {
-        const isFollowingCreator = userProfile.following?.includes(CREATOR_ID);
-        if (isFollowingCreator) {
-            updateUserProfile({ lastCampaignGateCheck: serverTimestamp() });
-            setShowCampaignGate(false);
-            setIsSheetOpen(true);
-            toast({
-                title: "¡Gracias por tu apoyo!",
-                description: "Ahora puedes crear tu campaña.",
-            });
-        } else {
-            toast({
-                variant: "destructive",
-                title: 'Verificación fallida',
-                description: 'Parece que aún no sigues al creador. Por favor, síguelo e inténtalo de nuevo.',
-            });
-        }
+        updateUserProfile({ lastCampaignGateCheck: serverTimestamp() });
+        setShowCampaignGate(false);
+        setIsSheetOpen(true);
+        toast({
+            title: "¡Gracias por tu apoyo!",
+            description: "Ahora puedes crear tu campaña.",
+        });
     };
     
     const renderView = () => {
@@ -162,7 +144,7 @@ export default function Dashboard({ userProfile, updateUserProfile }: { userProf
             </Sheet>
 
             {/* Campaign Gate Modal */}
-            {showCampaignGate && <CampaignGateModal onConfirm={handleCampaignGateConfirm} onCancel={() => setShowCampaignGate(false)} creatorId={CREATOR_ID} />}
+            {showCampaignGate && <CampaignGateModal onConfirm={handleCampaignGateConfirm} onCancel={() => setShowCampaignGate(false)} />}
 
         </main>
     );
