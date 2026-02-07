@@ -7,6 +7,7 @@ import type { UserProfile } from '@/types';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import GrowthPanelGate from '@/components/GrowthPanelGate';
 import GrowthPanel from '@/components/GrowthPanel';
+import CoinBalance from '@/components/CoinBalance';
 
 const ADMIN_UID = 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
 const CREATOR_ID = 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1';
@@ -52,7 +53,10 @@ export default function PanelPage() {
 
     return (
         <div className="container mx-auto p-4 md:p-8">
-            <h1 className="text-3xl font-headline text-white mb-8">Crecimiento de Cuentas</h1>
+            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
+                <h1 className="text-3xl font-headline text-white">Crecimiento de Cuentas</h1>
+                {isUnlocked && <CoinBalance balance={userProfile.coinBalance} />}
+            </div>
             {isUnlocked ? (
                  <GrowthPanel userProfile={userProfile} isAdmin={user.uid === ADMIN_UID} />
             ) : (
