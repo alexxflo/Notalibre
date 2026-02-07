@@ -5,8 +5,26 @@ service cloud.firestore {
     // PERFIL DE USUARIO Y SUS SUB-COLECCIONES
     match /users/{userId} {
       allow read: if request.auth != null;
-      // Allow user to write to their own profile, OR allow the admin to write to any profile.
-      allow write: if request.auth != null && (request.auth.uid == userId || request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1');
+
+      // REGLAS NUEVAS Y MÁS GRANULARES:
+      allow create, delete: if request.auth != null && (request.auth.uid == userId || request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1');
+      
+      allow update: if request.auth != null &&
+        (
+          // Regla 1: El dueño del perfil o el administrador pueden actualizar el documento.
+          request.auth.uid == userId || request.auth.uid == 'cgjnVXgaoVWFJfSwu4r1UAbZHbf1' ||
+          
+          // Regla 2: Un usuario autenticado puede modificar la lista de 'followers' de otro usuario,
+          // siempre y cuando sea el único campo que se está cambiando y solo se añada o elimine un elemento.
+          // Esto es necesario para que la función de seguir/dejar de seguir funcione correctamente desde el cliente.
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']) &&
+            (
+              request.resource.data.followers.size() == resource.data.followers.size() + 1 ||
+              request.resource.data.followers.size() == resource.data.followers.size() - 1
+            )
+          )
+        );
       
       // MENSAJES DE SOPORTE: Solo el dueño del perfil puede leer/escribir.
       match /messages/{messageId} {
