@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
-import { Home, MessageSquare, PlusSquare, User, LayoutGrid, Bell } from 'lucide-react';
+import { Home, MessageSquare, PlusSquare, User, LayoutGrid, Bell, Loader2, Heart, Image as ImageIcon } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { cn } from '@/lib/utils';
 import VortexLogo from '@/components/VortexLogo';
@@ -24,10 +25,13 @@ import { es } from 'date-fns/locale';
 import UserMenu from '../auth/UserMenu';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import PostForm from '../posts/PostForm';
 import { UserProfile } from '@/types';
-import { Heart, Image as ImageIcon } from 'lucide-react';
 
+// Dynamically import the PostForm component to reduce the initial chunk size.
+const PostForm = dynamic(() => import('../posts/PostForm'), {
+    loading: () => <div className="flex h-48 w-full items-center justify-center"><Loader2 className="animate-spin text-primary"/></div>,
+    ssr: false // This component uses client-side APIs like FileReader
+});
 
 const NavLink = ({ href, icon: Icon, children }: { href: string, icon: React.ElementType, children: React.ReactNode }) => {
     const pathname = usePathname();
@@ -165,6 +169,8 @@ function NotificationItem({ notification }: { notification: Notification }) {
 export default function Sidebar() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
+    const [mobileCreatePostOpen, setMobileCreatePostOpen] = useState(false);
+
 
     const notificationsQuery = useMemoFirebase(() => {
         if (!user) return null;
@@ -251,7 +257,7 @@ export default function Sidebar() {
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border h-16 flex justify-around items-stretch z-30">
                  <Link href="/" className="flex flex-col flex-1 items-center justify-center text-muted-foreground hover:bg-accent/50 hover:text-white"><Home/></Link>
                  <Link href="/messages" className="flex flex-col flex-1 items-center justify-center text-muted-foreground hover:bg-accent/50 hover:text-white"><MessageSquare/></Link>
-                 <Dialog>
+                 <Dialog open={mobileCreatePostOpen} onOpenChange={setMobileCreatePostOpen}>
                     <DialogTrigger asChild>
                          <button className="flex flex-col flex-1 items-center justify-center text-muted-foreground hover:bg-accent/50 hover:text-white"><PlusSquare/></button>
                     </DialogTrigger>
@@ -259,7 +265,7 @@ export default function Sidebar() {
                          <DialogHeader>
                             <DialogTitle>Crear nueva publicación</DialogTitle>
                         </DialogHeader>
-                        <PostForm userProfile={user as unknown as UserProfile} />
+                        <PostForm userProfile={user as unknown as UserProfile} onPostCreated={() => setMobileCreatePostOpen(false)} />
                     </DialogContent>
                  </Dialog>
                  <Link href="/panel" className="flex flex-col flex-1 items-center justify-center text-muted-foreground hover:bg-accent/50 hover:text-white"><LayoutGrid/></Link>
