@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useFirestore, useStorage } from '@/firebase';
 import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -11,7 +12,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Loader2, UploadCloud, Video, Image as ImageIcon, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UserProfile } from '@/types';
-import { Progress } from '@/components/ui/progress';
 
 type StoryUploaderProps = {
     userProfile: UserProfile;
@@ -241,7 +241,12 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
                         mediaType === 'video' ? (
                             <video src={mediaPreview} className="absolute inset-0 w-full h-full object-contain rounded-md" controls={false} muted autoPlay loop/>
                         ) : (
-                            <img src={mediaPreview} alt="Previsualización" className="absolute inset-0 w-full h-full object-contain rounded-md" />
+                            <Image 
+                                src={mediaPreview} 
+                                alt="Previsualización"
+                                fill
+                                className="object-contain"
+                            />
                         )
                     ) : (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -272,12 +277,11 @@ export default function StoryUploader({ userProfile }: StoryUploaderProps) {
                         <CheckCircle className="h-5 w-5" />
                         <p className="font-medium">Imagen seleccionada: { (mediaFile.size / 1024 / 1024).toFixed(2) } MB</p>
                     </div>
-                )}
+                 )}
                 
                 {isLoading && mediaType === 'video' && (
                     <div className="space-y-2">
-                        <p className="text-sm text-center text-primary">Subiendo video...</p>
-                        <Progress value={uploadProgress} className="w-full" />
+                        <p className="text-sm text-center text-primary">Subiendo video... {Math.round(uploadProgress)}%</p>
                     </div>
                 )}
 
