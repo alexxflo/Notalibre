@@ -30,7 +30,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <div className="md:flex">
             <Sidebar />
-            <main className="flex-1 md:pl-72">
+            <main className="flex-1 md:pl-72 pb-16 md:pb-0">
                {children}
             </main>
           </div>

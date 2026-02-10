@@ -26,7 +26,6 @@ function MessagesContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<{ id: string, otherParticipant: UserProfile } | null>(null);
   const [newMessage, setNewMessage] = useState('');
-  const [isComposeOpen, setIsComposeOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,6 +85,7 @@ function MessagesContent() {
     if (chatWithId && allUsers.length > 0 && user) {
         handleUserSelect(allUsers.find(u => u.id === chatWithId) || null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, allUsers, user]);
 
   const filteredUsers = useMemo(() => {
@@ -159,20 +159,18 @@ function MessagesContent() {
     });
 
     setNewMessage('');
-    setIsComposeOpen(false); // Close dialog on send
   };
 
   if (isUserLoading || !user || !currentUserProfile) {
-    return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
+    return <div className="flex items-center justify-center h-screen"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <main className="flex-grow container mx-auto p-4 md:p-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8 h-[calc(100vh-100px)]">
+    <div className="h-screen flex flex-col bg-background text-foreground">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 flex-1 overflow-hidden">
           
           {/* Left Column: Search and Chat List */}
-          <div className="md:col-span-1 lg:col-span-1 bg-card border border-border rounded-lg flex flex-col">
+          <div className="md:col-span-1 lg:col-span-1 bg-card border-r border-border flex flex-col">
             <div className="p-4 border-b border-border">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -233,7 +231,7 @@ function MessagesContent() {
           </div>
 
           {/* Right Column: Chat Area */}
-          <div className="md:col-span-2 lg:col-span-3 bg-card border border-border rounded-lg flex flex-col">
+          <div className="md:col-span-2 lg:col-span-3 bg-card border-border flex flex-col">
             {selectedChat ? (
               <>
                 <div className="p-4 border-b border-border flex items-center gap-3">
@@ -265,8 +263,9 @@ function MessagesContent() {
                     <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
-                {/* Desktop form - visible on md and larger */}
-                <div className="p-4 border-t border-border hidden md:block">
+                
+                {/* Unified Message Input Form */}
+                <div className="p-4 border-t border-border">
                   <form onSubmit={handleSendMessage} className="flex w-full items-center gap-2">
                     <Input
                       value={newMessage}
@@ -278,53 +277,23 @@ function MessagesContent() {
                     <Button type="submit" size="icon" disabled={!newMessage.trim() || areMessagesLoading}><Send /></Button>
                   </form>
                 </div>
-                {/* Mobile Dialog - hidden on md and larger */}
-                <div className="p-4 border-t border-border md:hidden">
-                    <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
-                        <DialogTrigger asChild>
-                            <div className="relative w-full">
-                                <Input placeholder="Escribe un mensaje..." readOnly className="cursor-pointer" />
-                                <Send className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            </div>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px] bg-card border-border">
-                            <DialogHeader>
-                                <DialogTitle>Mensaje para {selectedChat.otherParticipant.username}</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={handleSendMessage} className="flex items-center gap-2 py-4">
-                                <Input
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder="Tu mensaje..."
-                                    className="bg-background"
-                                    autoComplete="off"
-                                    autoFocus
-                                />
-                                <Button type="submit" size="icon" disabled={!newMessage.trim()}>
-                                    <Send />
-                                </Button>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
                 <MessageSquare className="w-24 h-24 mb-4" />
                 <h2 className="text-2xl font-bold">Selecciona un chat</h2>
-                <p>Elige una conversación o busca un nuevo usuario para empezar a chatear.</p>
+                <p className="text-center">Elige una conversación o busca un nuevo usuario para empezar a chatear.</p>
               </div>
             )}
           </div>
         </div>
-      </main>
     </div>
   );
 }
 
 export default function MessagesPage() {
     return (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+        <Suspense fallback={<div className="flex items-center justify-center h-screen"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
             <MessagesContent />
         </Suspense>
     )
