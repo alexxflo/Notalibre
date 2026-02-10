@@ -14,6 +14,7 @@ import { Loader2, Send, Search, Users, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 function MessagesContent() {
   const { user, isUserLoading } = useUser();
@@ -25,6 +26,7 @@ function MessagesContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<{ id: string, otherParticipant: UserProfile } | null>(null);
   const [newMessage, setNewMessage] = useState('');
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -157,6 +159,7 @@ function MessagesContent() {
     });
 
     setNewMessage('');
+    setIsComposeOpen(false); // Close dialog on send
   };
 
   if (isUserLoading || !user || !currentUserProfile) {
@@ -262,7 +265,8 @@ function MessagesContent() {
                     <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
-                <div className="p-4 border-t border-border">
+                {/* Desktop form - visible on md and larger */}
+                <div className="p-4 border-t border-border hidden md:flex">
                   <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                     <Input
                       value={newMessage}
@@ -273,6 +277,35 @@ function MessagesContent() {
                     />
                     <Button type="submit" size="icon" disabled={!newMessage.trim() || areMessagesLoading}><Send /></Button>
                   </form>
+                </div>
+                {/* Mobile dialog - hidden on md and larger */}
+                <div className="p-4 border-t border-border md:hidden">
+                  <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
+                    <DialogTrigger asChild>
+                      <div className="relative">
+                        <Input placeholder="Escribe un mensaje..." readOnly className="cursor-pointer" />
+                        <Send className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      </div>
+                    </DialogTrigger>
+                    <DialogContent className="bg-card border-border">
+                      <DialogHeader>
+                          <DialogTitle>Enviar mensaje a {selectedChat.otherParticipant.username}</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleSendMessage} className="flex items-center gap-2 pt-4">
+                          <Input
+                              value={newMessage}
+                              onChange={(e) => setNewMessage(e.target.value)}
+                              placeholder="Tu mensaje..."
+                              className="bg-background"
+                              autoComplete="off"
+                              autoFocus
+                          />
+                          <Button type="submit" size="icon" disabled={!newMessage.trim()}>
+                              <Send />
+                          </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </>
             ) : (

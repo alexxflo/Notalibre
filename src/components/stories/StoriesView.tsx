@@ -6,8 +6,8 @@ import { Story, UserProfile } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageSquare, Trash2, Loader2, Play, Pause, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useFirestore } from '@/firebase';
-import { doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
+import { useFirestore, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { doc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -83,7 +83,7 @@ export default function StoriesView({ groupedStories, currentUserProfile, initia
     // Mark as viewed
     if (currentUserProfile && !(currentStory.views ?? []).includes(currentUserProfile.id)) {
         const storyRef = doc(firestore, 'stories', currentStory.id);
-        updateDoc(storyRef, { views: arrayUnion(currentUserProfile.id) }).catch(console.error);
+        updateDocumentNonBlocking(storyRef, { views: arrayUnion(currentUserProfile.id) });
     }
     
     if (isPaused) return;
@@ -152,27 +152,22 @@ export default function StoriesView({ groupedStories, currentUserProfile, initia
       }
   };
   
-  const handleLike = () => {
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const storyRef = doc(firestore, 'stories', currentStory.id);
     if ((currentStory.likes ?? []).includes(currentUserProfile.id)) {
-      updateDoc(storyRef, { likes: arrayRemove(currentUserProfile.id) });
+      updateDocumentNonBlocking(storyRef, { likes: arrayRemove(currentUserProfile.id) });
     } else {
-      updateDoc(storyRef, { likes: arrayUnion(currentUserProfile.id) });
+      updateDocumentNonBlocking(storyRef, { likes: arrayUnion(currentUserProfile.id) });
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (currentUserProfile.id !== currentStory.userId) return;
     const storyRef = doc(firestore, 'stories', currentStory.id);
-    
-    try {
-      await deleteDoc(storyRef);
-      toast({ description: "Historia eliminada." });
-      router.push('/'); // Redirect after deletion
-    } catch (error) {
-      console.error("Error deleting story:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar la historia.' });
-    }
+    deleteDocumentNonBlocking(storyRef);
+    toast({ description: "Historia eliminada." });
+    router.push('/'); // Redirect after deletion
   };
 
   const handleCommentClick = (e: React.MouseEvent) => {
@@ -220,7 +215,7 @@ export default function StoriesView({ groupedStories, currentUserProfile, initia
             )
           )}
           
-          <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/70 to-transparent">
+          <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/70 to-transparent z-20">
             <div className="flex items-center gap-2 mb-2">
               {currentUserStories.map((_, index) => (
                 <div key={index} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
@@ -248,12 +243,12 @@ export default function StoriesView({ groupedStories, currentUserProfile, initia
           </div>
 
           {isPaused && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-none">
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-none z-10">
               {currentStory.mediaType === 'video' ? <Play className="h-24 w-24 text-white/80" /> : <Pause className="h-24 w-24 text-white/80" />}
             </div>
           )}
           
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent flex items-center justify-end gap-4">
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent flex items-center justify-end gap-4 z-20">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="text-white rounded-full">
                 <Eye />
@@ -275,11 +270,11 @@ export default function StoriesView({ groupedStories, currentUserProfile, initia
           </div>
 
           {/* Story navigation overlays */}
-          <div className="absolute left-0 top-0 h-full w-1/3" onClick={(e) => {
+          <div className="absolute left-0 top-0 h-full w-1/3 z-10" onClick={(e) => {
               e.stopPropagation();
               goToPrevStory();
           }} />
-          <div className="absolute right-0 top-0 h-full w-1/3" onClick={(e) => {
+          <div className="absolute right-0 top-0 h-full w-1/3 z-10" onClick={(e) => {
               e.stopPropagation();
               goToNextStory();
           }} />
