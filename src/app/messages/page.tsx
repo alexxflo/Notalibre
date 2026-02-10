@@ -14,7 +14,7 @@ import { Loader2, Send, Search, Users, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 function MessagesContent() {
   const { user, isUserLoading } = useUser();
@@ -159,7 +159,7 @@ function MessagesContent() {
     });
 
     setNewMessage('');
-    setIsComposeOpen(false); // Close sheet on send
+    setIsComposeOpen(false); // Close dialog on send
   };
 
   if (isUserLoading || !user || !currentUserProfile) {
@@ -278,20 +278,20 @@ function MessagesContent() {
                     <Button type="submit" size="icon" disabled={!newMessage.trim() || areMessagesLoading}><Send /></Button>
                   </form>
                 </div>
-                {/* Mobile sheet - hidden on md and larger */}
+                {/* Mobile Dialog - hidden on md and larger */}
                 <div className="p-4 border-t border-border md:hidden">
-                    <Sheet open={isComposeOpen} onOpenChange={setIsComposeOpen}>
-                        <SheetTrigger asChild>
+                    <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
+                        <DialogTrigger asChild>
                             <div className="relative w-full">
                                 <Input placeholder="Escribe un mensaje..." readOnly className="cursor-pointer" />
                                 <Send className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             </div>
-                        </SheetTrigger>
-                        <SheetContent side="bottom" className="bg-card border-border rounded-t-lg h-auto p-4">
-                            <SheetHeader className="text-left mb-4">
-                                <SheetTitle>Mensaje para {selectedChat.otherParticipant.username}</SheetTitle>
-                            </SheetHeader>
-                            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px] bg-card border-border">
+                            <DialogHeader>
+                                <DialogTitle>Mensaje para {selectedChat.otherParticipant.username}</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleSendMessage} className="flex items-center gap-2 py-4">
                                 <Input
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
@@ -304,8 +304,8 @@ function MessagesContent() {
                                     <Send />
                                 </Button>
                             </form>
-                        </SheetContent>
-                    </Sheet>
+                        </DialogContent>
+                    </Dialog>
                 </div>
               </>
             ) : (
