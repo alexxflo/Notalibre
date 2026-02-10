@@ -266,8 +266,8 @@ function MessagesContent() {
                   </div>
                 </ScrollArea>
                 {/* Desktop form - visible on md and larger */}
-                <div className="p-4 border-t border-border hidden md:flex">
-                  <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                <div className="p-4 border-t border-border hidden md:block">
+                  <form onSubmit={handleSendMessage} className="flex w-full items-center gap-2">
                     <Input
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
@@ -282,7 +282,7 @@ function MessagesContent() {
                 <div className="p-4 border-t border-border md:hidden">
                   <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
                     <DialogTrigger asChild>
-                      <div className="relative">
+                      <div className="relative w-full">
                         <Input placeholder="Escribe un mensaje..." readOnly className="cursor-pointer" />
                         <Send className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       </div>
