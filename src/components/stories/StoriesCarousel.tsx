@@ -91,17 +91,24 @@ export default function StoriesCarousel({ currentUserProfile }: { currentUserPro
                     {sortedStoriesByUser.map((userStories) => {
                         const firstStory = userStories[0];
                         if (!firstStory) return null;
+
+                        const allSeen = userStories.every(story => story.views?.includes(currentUserProfile.id));
                         
                         return (
                             <Link key={firstStory.userId} href={`/stories?user=${firstStory.userId}`} className="flex-shrink-0">
                                 <div className="flex flex-col items-center gap-2 w-20">
-                                    <div className="relative rounded-full p-1 bg-gradient-to-tr from-secondary to-primary">
+                                    <div className={cn(
+                                        "relative rounded-full p-1 transition-all",
+                                        allSeen 
+                                            ? "bg-muted-foreground" 
+                                            : "bg-gradient-to-tr from-secondary to-primary"
+                                    )}>
                                         <Avatar className="h-16 w-16 border-4 border-card">
                                             <AvatarImage src={firstStory.avatarUrl} />
                                             <AvatarFallback>{firstStory.username.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                     </div>
-                                    <p className="text-xs text-center text-muted-foreground truncate w-full">{firstStory.username}</p>
+                                    <p className={cn("text-xs text-center truncate w-full", allSeen ? "text-muted-foreground" : "text-foreground")}>{firstStory.username}</p>
                                 </div>
                             </Link>
                         )

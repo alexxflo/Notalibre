@@ -350,7 +350,8 @@
             "new_follower",
             "new_like",
             "new_comment",
-            "avatar_change"
+            "avatar_change",
+            "new_story_comment"
           ],
           "description": "The type of notification."
         },
@@ -481,12 +482,9 @@
             "type": "string"
           }
         },
-        "comments": {
-          "type": "array",
-          "description": "Array of comments on the story.",
-          "items": {
-            "type": "string"
-          }
+        "commentCount": {
+          "type": "number",
+          "description": "The total number of comments on the story."
         },
         "views": {
           "type": "array",
@@ -511,10 +509,50 @@
         "mediaUrl",
         "mediaType",
         "likes",
-        "comments",
+        "commentCount",
         "views",
         "createdAt",
         "expiresAt"
+      ]
+    },
+    "StoryComment": {
+      "title": "StoryComment",
+      "description": "Represents a single comment on a story.",
+      "type": "object",
+      "properties": {
+        "storyId": {
+          "type": "string",
+          "description": "The ID of the story this comment belongs to."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who wrote the comment."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the comment author."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the comment author's avatar."
+        },
+        "text": {
+          "type": "string",
+          "description": "The content of the comment."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the comment was created."
+        }
+      },
+      "required": [
+        "storyId",
+        "userId",
+        "username",
+        "avatarUrl",
+        "text",
+        "createdAt"
       ]
     }
   },
@@ -559,6 +597,12 @@
         "$ref": "#/entities/Story"
       },
       "description": "Stores temporary stories. A Cloud Function or client-side logic should be used to delete documents where 'expiresAt' has passed."
+    },
+    "/stories/{storyId}/comments/{commentId}": {
+      "schema": {
+        "$ref": "#/entities/StoryComment"
+      },
+      "description": "Stores comments for a specific story."
     },
     "/chats/{chatId}": {
       "schema": {

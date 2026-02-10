@@ -59,10 +59,20 @@ export interface Story {
     mediaUrl: string;
     mediaType: 'video' | 'image';
     likes: string[];
-    comments: string[];
+    commentCount: number;
     views: string[];
     createdAt: Timestamp;
     expiresAt: Timestamp;
+}
+
+export interface StoryComment {
+  id: string;
+  storyId: string;
+  userId: string;
+  username: string;
+  avatarUrl: string;
+  text: string;
+  createdAt?: Timestamp;
 }
 
 export interface DailyStats {
@@ -85,8 +95,8 @@ export interface Notification {
   actorId: string; // The user who performed the action
   actorUsername: string;
   actorAvatarUrl: string;
-  type: 'new_follower' | 'new_like' | 'new_comment' | 'avatar_change';
-  postId?: string; // for likes and comments
+  type: 'new_follower' | 'new_like' | 'new_comment' | 'avatar_change' | 'new_story_comment';
+  postId?: string; // for likes and comments on posts or stories
   postTextSnippet?: string; // for likes and comments
   read: boolean;
   createdAt?: Timestamp;
