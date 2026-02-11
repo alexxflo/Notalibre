@@ -80,12 +80,6 @@ export default function StoriesView({ groupedStories, currentUserProfile, initia
     cleanup();
     setProgress(0);
 
-    // Mark as viewed
-    if (currentUserProfile && !(currentStory.views ?? []).includes(currentUserProfile.id)) {
-        const storyRef = doc(firestore, 'stories', currentStory.id);
-        updateDocumentNonBlocking(storyRef, { views: arrayUnion(currentUserProfile.id) });
-    }
-    
     if (isPaused) return;
 
     if (currentStory.mediaType === 'image') {
