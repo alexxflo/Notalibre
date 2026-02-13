@@ -8,7 +8,13 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default function ProfilePage({ params }: { params: { userId: string } }) {
+interface ProfilePageProps {
+  params: {
+    userId: string;
+  };
+}
+
+export default function ProfilePage({ params }: ProfilePageProps) {
     const { userId } = params;
     return <ProfilePageClient userId={userId} />;
 }
