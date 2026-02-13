@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "android:add": "npx cap add android"
+    "android:add": "cap add android"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",
